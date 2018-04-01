@@ -1,24 +1,18 @@
-# ts-node-api-shell
-A shell project for nodejs + typescript web api applications.
-
-## Features
-- Gulp
-- Typescript
-- Azure Ready
-- Opinionated TsLint
-- Yarn
+# mark-services
+Powering the ethereum-based social media platform, Mark.
 
 ## Getting Started
-Note this is just a shell. Running the project will run the included code but only to the extent to executing, sequentially, the inclusion of the three included files. This will not produce any useful output alone. To make this your own, include a more useful application body.
+This project acts as the bridge between the client and the data-persistence layers, granting autorization to access the data-persistance layer via the client. 
+
+API Documents: mark-services.azurewebsites.net/api-docs
 
 ### Build Application
 `gulp build`
-**contrinuous build**
+**continuous build**
 `gulp watch`
 
 ### Run Application
-`gulp debug` or `node index.js`
+`gulp debug` for debugging output and `node index.js` for debug-less runtime.
 
 ## Publishing Project to Azure
-This application can be published to Azure with continuous deployment. This is the significance of the `deploy.cmd` and `.deployment`. Once connected with GitHub or BitBucket, this application will rebuild itself and run of its own accord.
-<more information to come>
+Pushing to the Github repo will publish the services project `mark-services.azurewebsites.net`.
