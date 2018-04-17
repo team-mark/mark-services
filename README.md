@@ -1,5 +1,5 @@
 # Mark Services
-A collection of projects that support the Mark back-end.
+A collection of projects powering the Mark social media platform.
 
 ## Features
 - Gulp
@@ -7,6 +7,10 @@ A collection of projects that support the Mark back-end.
 - Azure Ready
 - Opinionated TsLint
 - Yarn
+
+## Getting Started
+This project acts as the bridge between the client and the data-persistence layers, granting authorization to access the data-persistance layer via the client. 
+API Documents: https://mark-services-docs.azurewebsites.net/
 
 ### Build Application
 `gulp build`
@@ -20,5 +24,4 @@ A collection of projects that support the Mark back-end.
 More information on the framework this project was built from can be found here: https://github.com/ferrantejake/ts-node-api-shell
 
 ## Publishing Project to Azure
-This application can be published to Azure with continuous deployment. This is the significance of the `deploy.cmd` and `.deployment`. Once connected with GitHub or BitBucket, this application will rebuild itself and run of its own accord.
-<more information to come>
+Pushing to the Github repo will publish the services project `mark-services.azurewebsites.net`.
