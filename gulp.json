@@ -14,5 +14,64 @@
         "src/**/*.ts": "lib"
     },
     "resources": "src/**/*.!(ts)",
-    "inlineSourcemaps": true
+    "inlineSourcemaps": true,
+    
+    "projectPath": "projects/{project}",
+    "projectFiles": [
+        "projects/{project}/**/*"
+    ],
+    "dependencyPath": "projects/{project}/node_modules/",
+    "clean": [
+        "projects/{project}/lib/**/*.*"
+    ],
+    "cleanMain": [
+        "projects/{project}/lib/**/*.*"
+    ],
+    "deepClean": [
+        "projects/{project}/lib",
+        "projects/{project}/node_modules"
+    ],
+    "typings": "typings/index.d.ts",
+    "tsProjectFiles": "projects/{project}/src/**/*.ts",
+    "tsfiles": [
+        "typings/index.d.ts",
+        "projects/{project}/src/**/*.ts",
+        "!projects/{project}/src/ignore/**/*.*"
+    ],
+    "watchFiles": [
+        "typings/index.d.ts",
+        "projects/{project}/src/**/*.*"
+    ],
+    "resources": [
+        "projects/{project}/src/**/*.!(ts)"
+    ],
+    "dest": "projects/{project}/lib/",
+    "testClean": [
+        "projects/{project}/lib/.test/**/*.*"
+    ],
+    "testFiles": [
+        "typings/index.d.ts",
+        "projects/{project}/src/.test/**/*.ts"
+    ],
+    "testResources": [
+        "projects/{project}/src/.test/**/*.!(ts)"
+    ],
+    "testDest": "projects/{project}/lib/.test/",
+    "testRun0": [
+        "projects/{project}/lib/.test/**/*.js"
+    ],
+    "testRun": [
+        "projects/{project}/lib/.test/**/*.spec.js"
+    ],
+    "sloc_project": [
+        "projects/{project}/src/**/*.(ts|js|json)"
+    ],
+    "sloc_all": [
+        "projects/*/src/**/*.ts",
+        "projects/*/src/**/*.json",
+        "notes/*",
+        "docs/*",
+        "*.*"
+    ],
+    "inlineSourcemaps": false
 }

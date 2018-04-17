@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 const LOCALCONFIG_FILE_NAME = './localconfig.json';
 let _config: any;
-const debug = require('debug')('api-shell:localconfig:');
+const debug = require('debug')('mark:localconfig:');
 
 /**
  * Run local configuration setup
