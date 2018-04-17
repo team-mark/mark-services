@@ -14,6 +14,7 @@ API Documents: https://mark-services-docs.azurewebsites.net/
 
 ### Build Application
 `gulp build`
+
 **continuous build**
 `gulp watch`
 
@@ -24,4 +25,7 @@ API Documents: https://mark-services-docs.azurewebsites.net/
 More information on the framework this project was built from can be found here: https://github.com/ferrantejake/ts-node-api-shell
 
 ## Publishing Project to Azure
-Pushing to the Github repo will publish the services project `mark-services.azurewebsites.net`.
+Pushing to the Github repo will publish the services project https://mark-services.azurewebsites.net.
+
+## Thank You 
+Thank you to Droplit (https://droplit.io) for allowing us to use their build toolchain prior to public release. It is significant for our project's infrastructure as we now have the ability to share code across services with ease.
