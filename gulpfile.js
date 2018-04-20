@@ -12,7 +12,7 @@ require('events').EventEmitter.prototype._maxListeners = 50;
 const gulp = require('gulp-help')(require('gulp-param')(require('gulp'), process.argv));
 const async = require('async');
 const del = require('del');
-const DependencyResolver = require('dependency-resolver');
+// const DependencyResolver = require('dependency-resolver');
 const merge = require('merge2');
 const path = require('path');
 
@@ -32,11 +32,9 @@ let projects = require('./projects.json');
 // projects = filterProjects(projects);
 const projectNames = Object.keys(projects);
 
-// function filterProjects(projects) {
-//     const refinedProjects = {};
-//     Object.keys(projects).forEach(p => { if (!projects[p].excludeInMainBuild) refinedProjects[p] = projects[p] });
-//     return refinedProjects;
-// }
+const localconfig = require('./localconfig.json');
+if (localconfig)
+    Object.assign(process.env, localconfig['process.env'])
 
 function distinct(list) {
     if (!Array.isArray(list))
@@ -100,7 +98,14 @@ function runCommand(command, options, callback) {
 let resolver;
 
 function getDependencyList(project) {
+
+    if (!project) {
+        console.log("APP_NAME variable not defined! Required by `gulp startup` process. Exiting program.")
+        process.exit(1);
+    }
+
     if (resolver === undefined) {
+        const DependencyResolver = require('dependency-resolver');
         resolver = new DependencyResolver();
         projectNames.forEach(name => resolver.add(name));
         projectNames.forEach(projectName => {
@@ -145,9 +150,13 @@ gulp.task('startup', false, startupTask);
 
 function debugTask(project, debugScope) {
     debugScope = debugScope || 'mark:*';
+
+    project = project || process.env.APP_NAME
+
     if (project === undefined)
         return console.log('You must specify a project');
     console.log(`debugging projects/${project} with DEBUG=${debugScope}`);
+
     G$.nodemon({
         script: `${project}.js`,
         ext: 'js',
