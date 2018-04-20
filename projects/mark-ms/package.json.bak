@@ -1,0 +1,63 @@
+{
+    "name": "ms",
+    "debug": "mark:*",
+    "description": "Mark Services",
+    "main": "index.js",
+    "version": "0.0.0",
+    "private": true,
+    "scripts": {
+      "start": "node index.js",
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+ssh://git@github.com/team-mark/mark-services.git"
+    },
+    "keywords": [
+      "ts",
+      "node",
+      "shell"
+    ],
+    "author": "Jake Ferrante",
+    "license": "ISC",
+    "bugs": {
+      "url": "https://github.com/team-mark/mark-services/issues"
+    },
+    "homepage": "https://github.com/team-mark/mark-services#readme",
+    "dependencies": {
+      "@types/express": "^4.0.39",
+      "@types/express-serve-static-core": "^4.0.57",
+      "@types/node": "^8.0.55",
+      "async": "^2.6.0",
+      "body-parser": "~1.18.2",
+      "cookie-parser": "~1.4.3",
+      "cors": "^2.8.4",
+      "debug": "~2.6.9",
+      "del": "^2.2.2",
+      "dependency-resolver": "^2.0.1",
+      "exec": "^0.2.1",
+      "express": "~4.15.5",
+      "gulp-bump": "^2.7.0",
+      "gulp-help": "^1.6.1",
+      "gulp-load-plugins": "^1.2.2",
+      "gulp-mocha": "^2.2.0",
+      "gulp-nodemon": "^2.2.1",
+      "gulp-param": "^1.0.3",
+      "gulp-plumber": "^1.1.0",
+      "gulp-rename": "^1.2.2",
+      "gulp-sequence": "^0.4.5",
+      "gulp-sloc": "^1.0.4",
+      "gulp-sourcemaps": "^1.12.0",
+      "gulp-tslint": "8.1.2",
+      "gulp-typescript": "4.0.1",
+      "gulp-util": "^3.0.8",
+      "jade": "~1.11.0",
+      "merge2": "^1.0.3",
+      "morgan": "~1.9.0",
+      "path": "^0.12.7",
+      "serve-favicon": "~2.4.5",
+      "tslint": "^5.2.0",
+      "typescript": "^2.3.2"
+    }
+  }
+  

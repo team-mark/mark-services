@@ -1,0 +1,38 @@
+{
+  "name": "mark-services",
+  "$name": "mark-services.azurewebsites.net",
+  "author": "Droplit, Inc.",
+  "contributors": [
+    "Ferrante, Jake <jake@droplit.io>"
+  ],
+  "description": "Droplit authentication services, yo.",
+  "version": "1.1.4",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server"
+  },
+  "dependencies": {
+    "@types/aws-sdk": "^2.7.0",
+    "auth0": "2.6.0",
+    "aws-sdk": "^2.205.0",
+    "body-parser": "^1.15.2",
+    "connect-redis": "^3.2.0",
+    "cookie-parser": "^1.4.3",
+    "cors": "2.7.1",
+    "debug": "^2.6.0",
+    "dlog": "^0.1.4",
+    "ejs": "^2.5.5",
+    "express": "~4.13.1",
+    "express-session": "1.15.0",
+    "http-status": "^0.2.3",
+    "morgan": "^1.7.0",
+    "oauth2orize": "1.6.0",
+    "passport": "0.3.2",
+    "passport-auth0": "0.6.0",
+    "passport-cognito": "^0.1.10",
+    "passport-http-bearer": "^1.0.1",
+    "passport-oauth2-client-password": "0.1.2",
+    "request": "^2.79.0"
+  }
+}

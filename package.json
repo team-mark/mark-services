@@ -1,7 +1,7 @@
 {
-  "name": "ts-node-api-shell",
-  "debug": "api-shell:*",
-  "description": "A shell project for common nodejs + typescript standalone back-end applications.",
+  "name": "mark-services",
+  "debug": "mark:*",
+  "description": "Mark",
   "main": "index.js",
   "version": "0.0.0",
   "private": true,
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/ferrantejake/ts-node-api-shell.git"
+    "url": "git+ssh://git@github.com/team-mark/mark-services.git"
   },
   "keywords": [
     "ts",
@@ -21,9 +21,9 @@
   "author": "Jake Ferrante",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ferrantejake/ts-node-api-shell/issues"
+    "url": "https://github.com/team-mark/mark-services/issues"
   },
-  "homepage": "https://github.com/ferrantejake/ts-node-api-shell#readme",
+  "homepage": "https://github.com/team-mark/mark-services#readme",
   "dependencies": {
     "@types/express": "^4.0.39",
     "@types/express-serve-static-core": "^4.0.57",
