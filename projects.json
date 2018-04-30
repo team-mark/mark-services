@@ -1,4 +1,7 @@
 {
+    "@mark/utils": { },
+    "@mark/data-utils": { },
+    "@mark/mdb": { },
     "mark-ai": { },
-    "mark-ms": { }
+    "mark-ms": { "dependencies": [ "@mark/utils", "@mark/data-utils", "@mark/mdb"] }
 }

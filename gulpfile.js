@@ -12,7 +12,6 @@ require('events').EventEmitter.prototype._maxListeners = 50;
 const gulp = require('gulp-help')(require('gulp-param')(require('gulp'), process.argv));
 const async = require('async');
 const del = require('del');
-// const DependencyResolver = require('dependency-resolver');
 const merge = require('merge2');
 const path = require('path');
 

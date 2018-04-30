@@ -1,1 +1,1 @@
-var app = require('./projects/@mark/ms');
+require('./projects/mark-ai');

@@ -1,0 +1,16 @@
+{
+  "name": "@mark/mdb",
+  "debug": "mark:*",
+  "description": "Mark MDB",
+  "main": "index.js",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Jake Ferrante",
+  "license": "MIT",
+  "dependencies": {
+    "@types/mongodb": "^3.0.15",
+    "@types/node": "^8.0.55",
+    "debug": "~2.6.9",
+    "mongodb": "^3.0.7"
+  }
+}

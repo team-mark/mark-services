@@ -1,0 +1,16 @@
+{
+  "name": "@mark/utils",
+  "debug": "mark:*",
+  "description": "Mark Utils",
+  "main": "index.js",
+  "version": "0.0.0",
+  "private": true,
+  "author": "Jake Ferrante",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^8.0.55",
+    "debug": "~2.6.9",
+    "@types/http-status": "^0.2.30",
+    "http-status": "^1.0.1"
+  }
+}

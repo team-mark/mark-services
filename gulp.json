@@ -3,19 +3,10 @@
         "index.js",
         "src"
     ],
-    "dest": "lib",
-    "clean": [
-        "lib"
-    ],
-    "tsfiles": [
-        "src/**/*.ts"
-    ],
+
     "tsfilesmap": {
         "src/**/*.ts": "lib"
     },
-    "resources": "src/**/*.!(ts)",
-    "inlineSourcemaps": true,
-    
     "projectPath": "projects/{project}",
     "projectFiles": [
         "projects/{project}/**/*"
@@ -40,7 +31,9 @@
     ],
     "watchFiles": [
         "typings/index.d.ts",
-        "projects/{project}/src/**/*.*"
+        "projects/{project}/src/**/*.*",
+        "projects/{project}/*.ts",
+        "projects/{project}/*.js"
     ],
     "resources": [
         "projects/{project}/src/**/*.!(ts)"
