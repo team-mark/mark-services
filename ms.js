@@ -1,1 +1,1 @@
-require('./projects/mark-ms')
+const ms = require('./projects/mark-ms')

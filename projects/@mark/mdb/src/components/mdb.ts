@@ -2,7 +2,7 @@ import * as client from './mongo-client';
 import * as models from '../models';
 import * as mongo from 'mongodb';
 import { Account, Token } from '../models';
-
+const debug = require('debug')('mark:mdb');
 // Export types for convenience
 export type ICollection = mongo.Collection;
 export type IFilter<T = any> = mongo.FilterQuery<T>;
@@ -18,6 +18,7 @@ export type CollectionIndex = {
 let db: mongo.Db;
 
 export function initalize(): Promise<void> {
+    debug('initalize');
     return getConnectionInstance()
         .then(() => Promise.resolve());
 }
@@ -26,14 +27,16 @@ export function initalize(): Promise<void> {
  * Configures database connection instance. Resolves once a local database
  * instance is acquired.
  */
-export function getConnectionInstance(): Promise<mongo.Db> {
+export function getConnectionInstance() {
+    debug('getConnectionInstance');
     if (db) {
+        debug('getConnectionInstance: returning instance');
         return Promise.resolve(db);
     } else {
+        debug('getConnectionInstance: getting connection instance');
         return client.getInstance()
             .then(_db => {
                 db = _db;
-                // Object.keys(models)
                 return Promise.resolve(db);
             });
     }
@@ -65,7 +68,7 @@ export class Collection<T> {
 
     protected collection: mongo.Collection;
     public constructor(protected name: string) {
-        this.collection = db.collection(name);
+        this.collection = getCollection(name);
     }
 
     protected exists(query: IFilter): Promise<boolean> {

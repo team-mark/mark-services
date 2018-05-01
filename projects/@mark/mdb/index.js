@@ -1,2 +1,4 @@
-const lib = require('./lib');
-exports = lib;
+'use strict'
+
+const index = require('./lib');
+module.exports = index;

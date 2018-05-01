@@ -1,8 +1,8 @@
-console.log('in the lib');
 import * as models from './models';
 import { Account, Token, User } from './models';
 import { mdb } from './components';
 export { IAccountConsumer, IAccountDb, ITokenConsumer, ITokenDb, IUserConsumer, IUserDb } from './models';
+const debug = require('debug')('mark:mdb');
 
 const queries = {} as any;
 
@@ -24,6 +24,8 @@ export function init(): Promise<void> {
     return mdb.initalize()
         .then(() => {
 
+            debug('connection complete, setting up mongo cache');
+
             const _queries = {
                 accounts: new Account(),
                 tokens: new Token(),
@@ -34,20 +36,29 @@ export function init(): Promise<void> {
                 (queries as any)[query] = (_queries as any)[query];
             });
 
-            // Configure unique indexes
-            const indexes: mdb.CollectionIndex[] = [];
-            const indexesByCollection: { [collection: string]: mdb.CollectionIndex[] } = {};
+            return Promise.resolve();
 
-            Object.keys(queries).forEach(collectionName => {
-                if ((queries as any)[collectionName].indexes) {
+            // Programmatic indexes (maybe later)
 
-                    mdb.listIndexesByCollection(collectionName)
-                        .then(indexes => {
-                            console.log('indexes', indexes);
-                        });
+            // // Configure unique indexes
+            // const indexes: mdb.CollectionIndex[] = [];
+            // const indexesByCollection: { [collection: string]: mdb.CollectionIndex[] } = {};
 
-                    // ((queries as any)[modelName].indexes as mdb.CollectionIndex[]).forEach(indexes.push);
-                }
-            });
+            // Object.keys(queries).forEach(collectionName => {
+            //     const localIndexes: mdb.CollectionIndex[] = (queries as any)[collectionName].indexes;
+            //     if (localIndexes) {
+
+            //         mdb.listIndexesByCollection(collectionName)
+            //             .then(indexes => {
+            //                 const newIndexes = localIndexes.filter(index => {
+
+            //                     indexes.find()
+            //                 });
+
+            //             });
+
+            //         // ((queries as any)[modelName].indexes as mdb.CollectionIndex[]).forEach(indexes.push);
+            //     }
+            // });
         });
 }

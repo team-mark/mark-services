@@ -1,15 +1,22 @@
 #!/ usr / bin / env node
 
+// init custom runtime settings
+require('source-map-support').install();
+
 /**
  * Module dependencies.
  */
-
 import { init } from './init';
 import * as http from 'http';
+
 const debug = require('debug')('mark:server');
 
 const port = normalizePort(process.env.PORT || '4000');
 let server: http.Server;
+
+process.on('uncaughtException', onError);
+process.on('unhandledRejection', onError);
+process.on('SIGBREAK', sigbreakHandler);
 
 init()
     .then(() => {
@@ -22,9 +29,7 @@ init()
         server.on('listening', onListening);
         server.listen(port);
     })
-    .catch((error: any) => {
-        onError(error);
-    });
+    .catch(onError);
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -55,6 +60,8 @@ function normalizePort(val: any) {
  */
 
 function onError(error: any) {
+    debug(error);
+
     if (error.syscall !== 'listen') {
         throw error;
     }
@@ -74,6 +81,11 @@ function onError(error: any) {
         default:
             throw error;
     }
+}
+
+function sigbreakHandler() {
+    debug('SIGBREAK - exiting');
+    process.exit(1);
 }
 
 /**

@@ -1,1 +1,2 @@
-export * from './server';
+import * as server from './server';
+exports = server;
