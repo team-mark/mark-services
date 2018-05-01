@@ -7,7 +7,7 @@
     "Ferrante, Jake <jake@droplit.io>"
   ],
   "description": "Droplit authentication services, yo.",
-  "version": "1.1.4",
+  "version": "0.0.0",
   "private": true,
   "scripts": {
     "start": "node server"

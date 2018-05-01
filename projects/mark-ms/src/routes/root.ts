@@ -1,7 +1,8 @@
-import { Router } from 'express';
+import * as express from 'express';
+const pkg = require('../../package.json');
 
-const router: Router = Router();
-const api: Router = Router();
+const router: express.Router = express.Router();
+const api: express.Router = express.Router();
 
 const currentVersion = 'v0';
 
@@ -15,5 +16,13 @@ api.use('/accounts', accounts);
 
 router.use('/api', api);
 router.use(`/api/${currentVersion}`, api);
+
+router.use('/', index);
+
+// Home page
+function index(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    const DOCS_URL = process.env.MS_DOCS_URL;
+    res.render('index', { title: 'Mark API', docs: DOCS_URL, version: pkg.version });
+}
 
 module.exports = router;

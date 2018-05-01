@@ -51,6 +51,7 @@
     "gulp-tslint": "8.1.2",
     "gulp-typescript": "4.0.1",
     "gulp-util": "^3.0.8",
+    "hbs": "^4.0.1",
     "jade": "~1.11.0",
     "merge2": "^1.0.3",
     "morgan": "~1.9.0",

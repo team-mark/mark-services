@@ -1,6 +1,6 @@
 #!/ usr / bin / env node
 
-// init custom runtime settings
+// add sourcemap support for typescript
 require('source-map-support').install();
 
 /**
