@@ -14,6 +14,7 @@ const async = require('async');
 const del = require('del');
 const merge = require('merge2');
 const path = require('path');
+const fs = require('fs');
 
 // load gulp plugins
 const G$ = require('gulp-load-plugins')({ lazy: true });
@@ -31,9 +32,11 @@ let projects = require('./projects.json');
 // projects = filterProjects(projects);
 const projectNames = Object.keys(projects);
 
-const localconfig = require('./localconfig.json');
-if (localconfig)
+const localConfigExists = fs.existsSync('./localconfig.json');
+if (localConfigExists) {
+    const localconfig = require('./localconfig.json');
     Object.assign(process.env, localconfig['process.env'])
+}
 
 function distinct(list) {
     if (!Array.isArray(list))
