@@ -1,2 +1,2 @@
-const root = require('./root');
-module.exports = root;
+const index = require('./root');
+module.exports = index;
