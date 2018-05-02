@@ -26,6 +26,24 @@ const buildMain = done => {
     return gulp.parallel(...deps.map(d => `ts-${d}`))(done);
 };
 
+const copyDependenciesMain = done => {
+    let projectDependencies = Array.from(new Set([...getDependencyList(APP_NAME)])).filter(x => x !== APP_NAME);
+
+    const funs = projectDependencies.map(pd => {
+        gulp.task(`copy-${pd}`, () => {
+
+            const src = `projects/${pd}/**/*`;
+            const dest = `node_modules/${pd}`;
+            console.log(src, '=>', dest)
+            return gulp.src(src)
+                .pipe(gulp.dest(dest));
+        });
+        return `copy-${pd}`;
+    })
+
+    gulp.parallel(funs)(done)
+}
+
 /* Cleaning */
 const clean = project => () => del(expandGlobs(settings.clean, project), { dot: true });
 const cleanTask = (done, args) => clean(args.project)();
@@ -115,7 +133,7 @@ const deploySimulate = (done, args) => {
     }
 
     APP_NAME = project;
-    return gulp.series(cleanMain, gulp.parallel(installMain, initMain), buildMain)(done);
+    return gulp.series(cleanMain, gulp.parallel(installMain, initMain), buildMain, copyDependenciesMain)(done);
 };
 
 const initMain = () => gulp
@@ -153,6 +171,7 @@ const install = done => {
     )(done);
 };
 
+// Installs `project.json` dependencies for each project
 const installMain = done => {
     const deps = Array.from(new Set([APP_NAME, ...getDependencyList(APP_NAME)]));
     const commands = deps.map(name => {
