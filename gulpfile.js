@@ -202,7 +202,7 @@ function initMainTask() {
 }
 
 function startupTask(callback) {
-    G$.sequence('clean-main', ['install-main', 'init-main'], 'build-main', callback);
+    G$.sequence('clean-main', ['setup', 'init-main'], 'build-main', callback);
 }
 
 // Setup tasks
