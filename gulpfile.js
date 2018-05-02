@@ -141,7 +141,7 @@ const initMain = () => gulp
     .pipe(G$.rename('index.js'))
     .pipe(gulp.dest('.'));
 
-const startup = done => gulp.series(cleanMain, gulp.parallel(installMain, initMain), buildMain)(done);
+const startup = done => gulp.series(cleanMain, gulp.parallel(installMain, initMain), buildMain, copyDependenciesMain)(done);
 
 /* Linting */
 const tsLint = () => gulp
