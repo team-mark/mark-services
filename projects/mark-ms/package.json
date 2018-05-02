@@ -6,6 +6,9 @@
   "contributors": [
     "Ferrante, Jake <jake@droplit.io>"
   ],
+  "engines": {
+    "node": "^8.10.0"
+  },
   "description": "Droplit authentication services, yo.",
   "version": "0.0.0",
   "private": true,
