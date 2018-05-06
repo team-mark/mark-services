@@ -26,24 +26,6 @@ const buildMain = done => {
     return gulp.parallel(...deps.map(d => `ts-${d}`))(done);
 };
 
-const copyDependenciesMain = done => {
-    let projectDependencies = Array.from(new Set([...getDependencyList(APP_NAME)])).filter(x => x !== APP_NAME);
-
-    const funs = projectDependencies.map(pd => {
-        gulp.task(`copy-${pd}`, () => {
-
-            const src = `projects/${pd}/**/*`;
-            const dest = `node_modules/${pd}`;
-            console.log(src, '=>', dest)
-            return gulp.src(src)
-                .pipe(gulp.dest(dest));
-        });
-        return `copy-${pd}`;
-    })
-
-    gulp.parallel(funs)(done)
-}
-
 /* Cleaning */
 const clean = project => () => del(expandGlobs(settings.clean, project), { dot: true });
 const cleanTask = (done, args) => clean(args.project)();
@@ -133,7 +115,7 @@ const deploySimulate = (done, args) => {
     }
 
     APP_NAME = project;
-    return gulp.series(cleanMain, gulp.parallel(installMain, initMain), buildMain, copyDependenciesMain)(done);
+    return gulp.series(cleanMain, gulp.parallel(installMain, initMain), buildMain)(done);
 };
 
 const initMain = () => gulp
@@ -141,7 +123,7 @@ const initMain = () => gulp
     .pipe(G$.rename('index.js'))
     .pipe(gulp.dest('.'));
 
-const startup = done => gulp.series(cleanMain, gulp.parallel(installMain, initMain), buildMain, copyDependenciesMain)(done);
+const startup = done => gulp.series(cleanMain, gulp.parallel(installMain, initMain), buildMain)(done);
 
 /* Linting */
 const tsLint = () => gulp
