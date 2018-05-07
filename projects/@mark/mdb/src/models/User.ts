@@ -34,7 +34,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     public static map(user: IUserDb): IUserConsumer {
         const mapped: IUserConsumer = {
-            id: user.wallet.toString(),
+            id: user._id.toString(),
             handle: user.handle,
             wallet: user.wallet,
         };
@@ -65,9 +65,6 @@ export class User extends Model<IUserDb, IUserConsumer> {
     }
 
     public getByHandle(handle: string): Promise<IUserDb> {
-        // TODO: search by hashed handle value
-        const filter: mdb.IFilter = { handle };
-        return this.findOne(filter);
-    }
 
+    }
 }
