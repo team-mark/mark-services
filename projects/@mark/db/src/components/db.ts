@@ -2,7 +2,8 @@ import * as client from './mongo-client';
 import * as models from '../models';
 import * as mongo from 'mongodb';
 import { Account, Token } from '../models';
-const debug = require('debug')('mark:mdb');
+const debug = require('debug')('mark:db');
+
 // Export types for convenience
 export type ICollection = mongo.Collection;
 export type IFilter<T = any> = mongo.FilterQuery<T>;

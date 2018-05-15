@@ -1,2 +1,3 @@
 import * as rest from './rest';
-export { rest };
+import * as cryptoLib from './cryptoLib';
+export { rest, cryptoLib };

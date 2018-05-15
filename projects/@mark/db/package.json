@@ -1,5 +1,5 @@
 {
-  "name": "@mark/mdb",
+  "name": "@mark/db",
   "debug": "mark:*",
   "description": "Mark MDB",
   "main": "index.js",

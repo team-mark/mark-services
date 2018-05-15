@@ -1,2 +1,1 @@
-import * as src from './src';
-exports = src;
+export * from './src';

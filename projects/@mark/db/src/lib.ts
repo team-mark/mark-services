@@ -1,8 +1,8 @@
 import * as models from './models';
 import { Account, Token, User } from './models';
-import { mdb } from './components';
+import { db } from './components';
 export { IAccountConsumer, IAccountDb, ITokenConsumer, ITokenDb, IUserConsumer, IUserDb } from './models';
-const debug = require('debug')('mark:mdb');
+const debug = require('debug')('mark:db');
 
 const queries = {} as any;
 
@@ -21,7 +21,7 @@ export {
 export { Account, Token, User };
 
 export function init(): Promise<void> {
-    return mdb.initalize()
+    return db.initalize()
         .then(() => {
 
             debug('connection complete, setting up mongo cache');
@@ -41,14 +41,14 @@ export function init(): Promise<void> {
             // Programmatic indexes (maybe later)
 
             // // Configure unique indexes
-            // const indexes: mdb.CollectionIndex[] = [];
-            // const indexesByCollection: { [collection: string]: mdb.CollectionIndex[] } = {};
+            // const indexes: db.CollectionIndex[] = [];
+            // const indexesByCollection: { [collection: string]: db.CollectionIndex[] } = {};
 
             // Object.keys(queries).forEach(collectionName => {
-            //     const localIndexes: mdb.CollectionIndex[] = (queries as any)[collectionName].indexes;
+            //     const localIndexes: db.CollectionIndex[] = (queries as any)[collectionName].indexes;
             //     if (localIndexes) {
 
-            //         mdb.listIndexesByCollection(collectionName)
+            //         db.listIndexesByCollection(collectionName)
             //             .then(indexes => {
             //                 const newIndexes = localIndexes.filter(index => {
 
@@ -57,7 +57,7 @@ export function init(): Promise<void> {
 
             //             });
 
-            //         // ((queries as any)[modelName].indexes as mdb.CollectionIndex[]).forEach(indexes.push);
+            //         // ((queries as any)[modelName].indexes as db.CollectionIndex[]).forEach(indexes.push);
             //     }
             // });
         });

@@ -1,7 +1,7 @@
 import * as express from 'express';
 const router = express.Router();
 module.exports = router;
-import * as mdb from '@mark/mdb';
+import * as db from '@mark/db';
 import { rest } from '@mark/utils';
 import { unwatchFile } from 'fs';
 
@@ -13,12 +13,12 @@ router.get('/:handle', respond(getAccount));
 // Route definitions
 function getAccount(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.RestResponse> {
     const { handle } = req.params;
-    return mdb.users.getByHandle(handle)
+    return db.users.getByHandle(handle)
         .then(user => {
             if (user) {
-                return Promise.resolve(rest.RestResponse.fromSuccess(res, mdb.User.map(user)));
+                return Promise.resolve(rest.RestResponse.fromSuccess(db.User.map(user)));
             } else {
-                return Promise.resolve(rest.RestResponse.fromNotFound(res, { handle }));
+                return Promise.resolve(rest.RestResponse.fromNotFound({ handle }));
             }
         });
 }

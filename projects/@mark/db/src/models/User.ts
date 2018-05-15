@@ -1,4 +1,4 @@
-import { mdb } from '../components';
+import { db } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
 
 const COLLECTION_NAME = 'accounts';
@@ -16,8 +16,8 @@ export interface IUserConsumer extends IModelConsumer {
 }
 
 export class User extends Model<IUserDb, IUserConsumer> {
-    private users: mdb.ICollection;
-    public indexes: mdb.CollectionIndex[] = [
+    private users: db.ICollection;
+    public indexes: db.CollectionIndex[] = [
         {
             key: {
                 handle: 1,
@@ -44,7 +44,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public checkIfExists(handle: string): Promise<boolean> {
         // TODO: hash username and search
         const handleHash = handle;
-        const filter: mdb.IFilter = { handleh: handle };
+        const filter: db.IFilter = { handleh: handle };
         return this.exists(filter);
     }
 
@@ -65,6 +65,6 @@ export class User extends Model<IUserDb, IUserConsumer> {
     }
 
     public getByHandle(handle: string): Promise<IUserDb> {
-
+        return null;
     }
 }

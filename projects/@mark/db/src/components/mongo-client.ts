@@ -1,5 +1,5 @@
 import * as mongo from 'mongodb';
-const debug = require('debug')('mark:mdb');
+const debug = require('debug')('mark:db');
 
 let db: mongo.Db;
 let client: mongo.MongoClient;
