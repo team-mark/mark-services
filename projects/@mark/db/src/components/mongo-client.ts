@@ -28,7 +28,7 @@ export function getInstance(): Promise<mongo.Db> {
  */
 function setupConnection(): Promise<mongo.Db> {
     try {
-        const MONGO_CONNECTION = process.env.MONGO_CONNECTION;
+        const { MONGO_CONNECTION } = process.env;
         const requiredFields: boolean = !!(MONGO_CONNECTION);
         if (!requiredFields) {
             throw new Error('MONGO_CONNECTION undefined. exiting process.');

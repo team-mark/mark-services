@@ -7,6 +7,7 @@ const { exec } = require('child_process');
 const log = require('fancy-log');
 const merge = require('merge2');
 const path = require('path');
+const fs = require('fs');
 
 const G$ = require('gulp-load-plugins')({ lazy: true });
 
@@ -19,6 +20,12 @@ let resolver;
 
 let APP_NAME = process.env.APP_NAME;
 const PROJECT_VAR = '{project}';
+
+let localconfig = undefined;
+const localconfigExists = fs.existsSync('./localconfig.json')
+if (localconfigExists) {
+    localconfig = require('./localconfig.json');
+}
 
 /* Build */
 const buildMain = done => {
@@ -73,7 +80,7 @@ const debug = (done, params) => {
             ignore.push(`projects/${dep}/src`, `projects/${dep}/node_modules`);
         });
 
-    G$.nodemon({
+    const args = {
         script: `${project}.js`,
         ext: 'js',
         env: {
@@ -84,7 +91,13 @@ const debug = (done, params) => {
         delay: 1, // Sec
         watch,
         ignore
-    });
+    }
+
+    if (localconfig) {
+        Object.assign(args.env, localconfig['process.env'])
+    }
+
+    G$.nodemon(args);
 };
 
 /* Dependencies */
