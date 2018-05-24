@@ -6,7 +6,7 @@ import Model, { IModelConsumer, IModelDb } from './Model';
 
 export interface IMarkConsumer extends IModelConsumer {
     id: string;
-    ethereum_id: string
+    ethereum_id: string;
     likes: number;
     dislikes: number;
 }
@@ -30,9 +30,11 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     public static map(mark: IMarkDb): IMarkConsumer {
         const mapped: IMarkConsumer = {
             id: mark._id.toString(),
-            handle: user.handle,
-            wallet: user.wallet,
+            ethereum_id: mark.ethereum_id,
+            likes: mark.likes.length,
+            dislikes: mark.dislikes.length
         };
+
         return mapped;
     }
 }

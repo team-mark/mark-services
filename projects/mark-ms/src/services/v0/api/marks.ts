@@ -12,6 +12,6 @@ const respond = rest.promiseResponseMiddlewareWrapper;
 // Routes
 router.get('/:handle', respond(mark_dummy));
 
-function mark_dummy(req: express.Request, res: express.Response, next: express.NextFunction) : Promise<rest.RestResponse>  {
+function mark_dummy(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.RestResponse>  {
     return Promise.resolve(rest.RestResponse.fromSuccess(null));
 }

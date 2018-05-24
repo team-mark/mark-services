@@ -7,7 +7,7 @@ export interface IModelDb {
     _id: mongo.ObjectID;
 }
 
-// Format data to be given to the client 
+// Format data to be given to the client
 export interface IModelConsumer {
     id: string;
 }

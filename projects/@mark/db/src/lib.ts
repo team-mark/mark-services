@@ -1,4 +1,4 @@
-// Initializes the database 
+// Initializes the database
 // Initializes models of database collections
 // import * as models from './models';
 import { Account, Token, User, Mark } from './models';
@@ -16,7 +16,7 @@ const queries = {
 const accounts: Account = queries.accounts;
 const tokens: Token = queries.tokens;
 const users: User = queries.users;
-const marks: Mark = queries.marks
+const marks: Mark = queries.marks;
 
 // Export colllection methods
 export {
