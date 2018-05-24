@@ -1,20 +1,29 @@
-import * as models from './models';
-import { Account, Token, User } from './models';
+// Initializes the database 
+// Initializes models of database collections
+// import * as models from './models';
+import { Account, Token, User, Mark } from './models';
 import { db } from './components';
 export { IAccountConsumer, IAccountDb, ITokenConsumer, ITokenDb, IUserConsumer, IUserDb } from './models';
 const debug = require('debug')('mark:db');
 
-const queries = {} as any;
+const queries = {
+    accounts: null,
+    tokens: null,
+    users: null,
+    marks: null
+} as any;
 
 const accounts: Account = queries.accounts;
 const tokens: Token = queries.tokens;
 const users: User = queries.users;
+const marks: Mark = queries.marks
 
 // Export colllection methods
 export {
     accounts,
     tokens,
-    users
+    users,
+    marks
 };
 
 // Export class static functions
@@ -29,11 +38,12 @@ export function init(): Promise<void> {
             const _queries = {
                 accounts: new Account(),
                 tokens: new Token(),
-                users: new User()
+                users: new User(),
+                mark: new Mark()
             };
 
-            Object.keys(_queries).forEach(query => {
-                (queries as any)[query] = (_queries as any)[query];
+            Object.keys(_queries).forEach(key => {
+                (queries as any)[key] = (_queries as any)[key];
             });
 
             return Promise.resolve();
