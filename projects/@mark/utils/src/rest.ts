@@ -23,7 +23,10 @@ export class RestResponse {
 
     public static fromNotFound(query_parameters?: any): RestResponse {
         const reason = 'could not locate record(s)';
-        const body = { details: reason, query: query_parameters.toString() };
+        const body = { details: reason } as any;
+        if (query_parameters) {
+            body.query = query_parameters.toString();
+        }
         const restResponse = new RestResponse(STATUS.NOT_FOUND, body);
         return restResponse;
     }
@@ -44,13 +47,17 @@ export class RestResponse {
 }
 
 export function promiseResponseMiddlewareWrapper(debug: any) {
-    return (promiseMiddleware: (req: express.Request, res: express.Response, next: express.NextFunction) => Promise<RestResponse>) => {
-        (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    // debug('generating middleware');
+    return (promiseMiddleware: (req: express.Request, res: express.Response, next: express.NextFunction) => Promise<RestResponse>): express.RequestHandler => {
+        return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+            // debug('generating middleware');
             promiseMiddleware(req, res, next)
                 .then(restResponse => {
+                    // debug('responding to middleware');
                     restResponse.send(res);
                 })
                 .catch(error => {
+                    // debug('error in middleware');
                     if (debug) {
                         debug(error);
                     }
@@ -61,7 +68,14 @@ export function promiseResponseMiddlewareWrapper(debug: any) {
     };
 }
 
+export function verify(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    req.query = { ...req.query };
+    req.params = { ...req.params };
+    req.body = { ...req.body };
+    next();
+}
+
 export function notAllowed(req: express.Request, res: express.Response, next: express.NextFunction): void {
-    const restResponse = RestResponse.fromNotFound(res);
+    const restResponse = RestResponse.fromNotFound();
     restResponse.send(res);
 }

@@ -4,23 +4,27 @@ module.exports = router;
 import * as db from '@mark/db';
 import { rest, cryptoLib } from '@mark/utils';
 import { auth } from '@mark/data-utils';
+const debug = require('debug')('mark:accounts');
 
 const { authBasic, authAnon, notAllowed } = auth;
+const { verify } = rest;
+const respond = rest.promiseResponseMiddlewareWrapper(debug);
+
 // Routes
 router.route('/login')
-    .post(authBasic, login)
+    .post(authBasic, verify, login)
     .all(notAllowed);
 router.route('/signup')
-    .post(authAnon, login)
+    .post(authAnon, verify, login)
     .all(notAllowed);
 router.route('/signup-validate')
-    .post(authAnon, login)
+    .post(authAnon, verify, login)
     .all(notAllowed);
 router.route('/check-handle-availability')
-    .post(authAnon, checkHandleAvailability)
+    .post(authAnon, verify, respond(checkHandleAvailability))
     .all(notAllowed);
 router.route('/get-token')
-    .post(authAnon, getToken)
+    .post(authAnon, verify, getToken)
     .all(notAllowed);
 
 // Route definitions
@@ -33,9 +37,9 @@ function checkHandleAvailability(req: express.Request, res: express.Response, ne
     return db.users.checkIfExists(handle)
         .then(exists => {
             if (exists) {
-                return Promise.resolve(rest.RestResponse.fromSuccess(res));
+                return rest.RestResponse.fromSuccess();
             } else {
-                return Promise.resolve(rest.RestResponse.fromNotFound(res));
+                return rest.RestResponse.fromNotFound();
             }
         });
 }
@@ -44,6 +48,6 @@ function getToken(req: express.Request, res: express.Response, next: express.Nex
     const { handle } = req.query;
 
     return cryptoLib.generateSecureCode(20)
-        .then(code => Promise.resolve(rest.RestResponse.fromSuccess({ code })))
-        .catch(error => Promise.resolve(rest.RestResponse.fromNotAllowed()));
+        .then(code => rest.RestResponse.fromSuccess({ code }))
+        .catch(error => rest.RestResponse.fromNotAllowed());
 }

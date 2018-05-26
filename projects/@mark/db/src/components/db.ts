@@ -74,7 +74,7 @@ export class Collection<T> {
 
     protected exists(query: IFilter): Promise<boolean> {
         return this.collection.findOne(query)
-            .then(docs => !!(docs.lenght));
+            .then(doc => !!doc);
     }
 
     protected findOne(query: IFilter): Promise<T> {
