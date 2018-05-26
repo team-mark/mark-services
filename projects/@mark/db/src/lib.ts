@@ -6,25 +6,17 @@ import { db } from './components';
 export { IAccountConsumer, IAccountDb, ITokenConsumer, ITokenDb, IUserConsumer, IUserDb } from './models';
 const debug = require('debug')('mark:db');
 
-const queries = {
-    accounts: null,
-    tokens: null,
-    users: null,
-    marks: null
+const collectionMap = {
+    accounts: Account,
+    tokens: Token,
+    users: User,
+    marks: Mark,
 } as any;
 
-const accounts: Account = queries.accounts;
-const tokens: Token = queries.tokens;
-const users: User = queries.users;
-const marks: Mark = queries.marks;
-
-// Export colllection methods
-export {
-    accounts,
-    tokens,
-    users,
-    marks
-};
+export let accounts: Account; // queries.accounts;
+export let tokens: Token; // queries.tokens;
+export let users: User; // queries.users;
+export let marks: Mark; // queries.marks;
 
 // Export class static functions
 export { Account, Token, User };
@@ -35,15 +27,8 @@ export function init(): Promise<void> {
 
             debug('connection complete, setting up mongo cache');
 
-            const _queries = {
-                accounts: new Account(),
-                tokens: new Token(),
-                users: new User(),
-                mark: new Mark()
-            };
-
-            Object.keys(_queries).forEach(key => {
-                (queries as any)[key] = (_queries as any)[key];
+            Object.keys(collectionMap).forEach(collectionName => {
+                this[collectionName] = exports[collectionName] = new collectionMap[collectionName]();
             });
 
             return Promise.resolve();
