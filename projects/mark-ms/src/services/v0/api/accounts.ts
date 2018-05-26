@@ -33,7 +33,7 @@ function login(req: express.Request, res: express.Response, next: express.NextFu
 }
 
 function checkHandleAvailability(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.RestResponse> {
-    const { handle } = req.query;
+    const { handle } = req.body;
     return db.users.checkIfExists(handle)
         .then(exists => {
             if (exists) {

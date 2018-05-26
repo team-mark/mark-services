@@ -9,10 +9,12 @@ const currentVersion = 'v0';
 const tokens = require(`../services/${currentVersion}/api/tokens`);
 const users = require(`../services/${currentVersion}/api/users`);
 const accounts = require(`../services/${currentVersion}/api/accounts`);
+const marks = require(`../services/${currentVersion}/api/marks`);
 
 api.use('/users', users);
 api.use('/tokens', tokens);
 api.use('/accounts', accounts);
+api.use('/marks', marks);
 
 router.use('/api', api);
 router.use(`/api/${currentVersion}`, api);

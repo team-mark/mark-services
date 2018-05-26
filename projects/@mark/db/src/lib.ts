@@ -19,7 +19,7 @@ export let users: User; // queries.users;
 export let marks: Mark; // queries.marks;
 
 // Export class static functions
-export { Account, Token, User };
+export { Account, Token, User, Mark };
 
 export function init(): Promise<void> {
     return db.initalize()
