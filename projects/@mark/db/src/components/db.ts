@@ -85,6 +85,10 @@ export class Collection<T> {
         const cursor = this.collection.find(query);
         return selectPromise(cursor);
     }
+
+    protected addDocument(doc: string): Promise<mongo.InsertOneWriteOpResult> {
+        return this.collection.insertOne(doc);
+    }
     /**
      * Select items matching your query from the database.
      * @param cursor

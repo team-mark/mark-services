@@ -65,13 +65,12 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         return mapped;
     }
 
-    public retrieve_marks(): Promise<IMarkDb[]> {
+    public retrieveMarks(): Promise<IMarkDb[]> {
         const filter: db.IFilter<IMarkDb> = {};
         return this.findMany({});
-        /*return this.findMany(filter)
-            .then(results => {
-                results.map(Mark.map);
-                return results;
-            });*/
+    }
+
+    public postMark(doc: any): Promise<mongo.InsertOneWriteOpResult> {
+        return this.addDocument(doc);
     }
 }

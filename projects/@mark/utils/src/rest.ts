@@ -44,6 +44,13 @@ export class RestResponse {
         const restResponse = new RestResponse(STATUS.UNAUTHORIZED, body);
         return restResponse;
     }
+
+    public static fromDbError(): RestResponse {
+        const reason = 'database error';
+        const body = { details: reason };
+        const restResponse = new RestResponse(STATUS.INTERNAL_SERVER_ERROR, body);
+        return restResponse;
+    }
 }
 
 export function promiseResponseMiddlewareWrapper(debug: any) {

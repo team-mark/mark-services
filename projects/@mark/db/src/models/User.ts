@@ -1,7 +1,7 @@
 import { db } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
 
-const COLLECTION_NAME = 'accounts';
+const COLLECTION_NAME = 'users';
 
 export interface IUserDb extends IModelDb {
     handle: string; // unique handle
