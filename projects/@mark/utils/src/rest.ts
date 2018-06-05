@@ -6,7 +6,7 @@ export interface ResponseReason {
     query: string;
 }
 
-export class RestResponse {
+export class Response {
     public constructor(private status: number, private body?: any) {
         return this;
     }
@@ -16,46 +16,46 @@ export class RestResponse {
         res.send(this.body);
     }
 
-    public static fromSuccess(body?: any): RestResponse {
-        const restResponse = new RestResponse(STATUS.OK, body);
+    public static fromSuccess(body?: any): Response {
+        const restResponse = new Response(STATUS.OK, body);
         return restResponse;
     }
 
-    public static fromNotFound(query_parameters?: any): RestResponse {
+    public static fromNotFound(query_parameters?: any): Response {
         const reason = 'could not locate record(s)';
         const body = { details: reason } as any;
         if (query_parameters) {
             body.query = query_parameters.toString();
         }
-        const restResponse = new RestResponse(STATUS.NOT_FOUND, body);
+        const restResponse = new Response(STATUS.NOT_FOUND, body);
         return restResponse;
     }
 
-    public static fromNotAllowed(): RestResponse {
+    public static fromNotAllowed(): Response {
         const reason = 'not allowed';
         const body = { details: reason };
-        const restResponse = new RestResponse(STATUS.NOT_FOUND, body);
+        const restResponse = new Response(STATUS.NOT_FOUND, body);
         return restResponse;
     }
 
-    public static fromUnauthorized(): RestResponse {
+    public static fromUnauthorized(): Response {
         const reason = 'unauthorized';
         const body = { details: reason };
-        const restResponse = new RestResponse(STATUS.UNAUTHORIZED, body);
+        const restResponse = new Response(STATUS.UNAUTHORIZED, body);
         return restResponse;
     }
 
-    public static fromDbError(): RestResponse {
+    public static fromServerError(): Response {
         const reason = 'database error';
         const body = { details: reason };
-        const restResponse = new RestResponse(STATUS.INTERNAL_SERVER_ERROR, body);
+        const restResponse = new Response(STATUS.INTERNAL_SERVER_ERROR, body);
         return restResponse;
     }
 }
 
 export function promiseResponseMiddlewareWrapper(debug: any) {
     // debug('generating middleware');
-    return (promiseMiddleware: (req: express.Request, res: express.Response, next: express.NextFunction) => Promise<RestResponse>): express.RequestHandler => {
+    return (promiseMiddleware: (req: express.Request, res: express.Response, next: express.NextFunction) => Promise<Response>): express.RequestHandler => {
         return (req: express.Request, res: express.Response, next: express.NextFunction) => {
             // debug('generating middleware');
             promiseMiddleware(req, res, next)
@@ -83,6 +83,6 @@ export function verify(req: express.Request, res: express.Response, next: expres
 }
 
 export function notAllowed(req: express.Request, res: express.Response, next: express.NextFunction): void {
-    const restResponse = RestResponse.fromNotFound();
+    const restResponse = Response.fromNotFound();
     restResponse.send(res);
 }

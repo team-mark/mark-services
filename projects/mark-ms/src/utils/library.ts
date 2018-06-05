@@ -1,2 +1,3 @@
 import * as localconfig from './localconfig';
-export { localconfig };
+import * as authentication from './authentication';
+export { localconfig , authentication};

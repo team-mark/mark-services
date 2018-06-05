@@ -15,14 +15,14 @@ router.get('/', verify, respond(markFetch));
 
 router.post('/', verify, respond(markPost));
 
-function markFetch(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.RestResponse> {
+function markFetch(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     return db.marks.retrieveMarks().then(_marks => {
         const consumer = _marks.map(db.Mark.map);
-        return Promise.resolve(rest.RestResponse.fromSuccess(consumer));
+        return Promise.resolve(rest.Response.fromSuccess(consumer));
     });
 }
 
-function markPost(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.RestResponse> {
+function markPost(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
      // add in input checks
      // add in etheruem insert
     const {title, body} = req.body;
@@ -31,8 +31,8 @@ function markPost(req: express.Request, res: express.Response, next: express.Nex
     const document = {title, body, dislikes, likes};
     return db.marks.postMark(document).then(result => {
         if (result.result)
-            return Promise.resolve(rest.RestResponse.fromSuccess());
+            return Promise.resolve(rest.Response.fromSuccess());
         else
-            return Promise.resolve(rest.RestResponse.fromDbError());
+            return Promise.resolve(rest.Response.fromServerError());
     });
 }
