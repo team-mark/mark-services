@@ -1,4 +1,4 @@
-import { db } from '../components';
+import { mongoDb } from '../components';
 import * as mongo from 'mongodb';
 
 // Data structure to be passed and retrieved from
@@ -12,7 +12,7 @@ export interface IModelConsumer {
     id: string;
 }
 
-export default class Model<T extends IModelDb, T1 extends IModelConsumer> extends db.Collection<T> {
+export default class Model<T extends IModelDb, T1 extends IModelConsumer> extends mongoDb.Collection<T> {
 
     protected constructor(name: string) {
         super(name);
@@ -20,13 +20,13 @@ export default class Model<T extends IModelDb, T1 extends IModelConsumer> extend
 
     // Get single documents by id
     public getById(id: string): Promise<T> {
-        const filter: db.IFilter<T> = { _id: id };
+        const filter: mongoDb.IFilter<T> = { _id: id };
         return this.collection.findOne(filter);
     }
 
     // Get multiple documents by id
     public getByIds(ids: string[]): Promise<T[]> {
-        const filter: db.IFilter<T> = { _id: { $in: ids } };
+        const filter: mongoDb.IFilter<T> = { _id: { $in: ids } };
         return this.findMany(filter);
     }
 }

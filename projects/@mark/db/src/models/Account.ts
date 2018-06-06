@@ -1,4 +1,4 @@
-import { db } from '../components';
+import { mongoDb } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
 
 export interface IAccountConsumer extends IModelConsumer {
@@ -11,7 +11,7 @@ export interface IAccountDb extends IModelDb {
 const COLLECTION_NAME = 'accounts';
 
 export class Account extends Model<IAccountDb, IAccountConsumer> {
-    private accounts: db.ICollection;
+    private accounts: mongoDb.ICollection;
 
     public constructor() {
         super(COLLECTION_NAME);

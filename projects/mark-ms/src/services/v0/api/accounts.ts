@@ -32,22 +32,22 @@ function login(req: express.Request, res: express.Response, next: express.NextFu
     res.send({ username: 'ferrantejake' });
 }
 
-function checkHandleAvailability(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.RestResponse> {
+function checkHandleAvailability(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     const { handle } = req.body;
     return db.users.checkIfExists(handle)
         .then(exists => {
             if (exists) {
-                return rest.RestResponse.fromSuccess();
+                return rest.Response.fromSuccess();
             } else {
-                return rest.RestResponse.fromNotFound();
+                return rest.Response.fromNotFound();
             }
         });
 }
 
-function getToken(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.RestResponse> {
+function getToken(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     const { handle } = req.query;
 
     return cryptoLib.generateSecureCode(20)
-        .then(code => rest.RestResponse.fromSuccess({ code }))
-        .catch(error => rest.RestResponse.fromNotAllowed());
+        .then(code => rest.Response.fromSuccess({ code }))
+        .catch(error => rest.Response.fromNotAllowed());
 }

@@ -16,15 +16,15 @@ router.route('/:handle')
     .get(authBasic, verify, respond(getAccount));
 
 // Route definitions
-function getAccount(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.RestResponse> {
+function getAccount(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     console.log('req.params users', req.params);
     const { handle } = req.params;
     return db.users.getByHandle(handle)
         .then(user => {
             if (user) {
-                return Promise.resolve(rest.RestResponse.fromSuccess(db.User.map(user)));
+                return Promise.resolve(rest.Response.fromSuccess(db.User.map(user)));
             } else {
-                return Promise.resolve(rest.RestResponse.fromNotFound({ handle }));
+                return Promise.resolve(rest.Response.fromNotFound({ handle }));
             }
         });
 }

@@ -1,4 +1,4 @@
-import { db } from '../components';
+import { mongoDb } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
 
 const COLLECTION_NAME = 'users';
@@ -16,8 +16,8 @@ export interface IUserConsumer extends IModelConsumer {
 }
 
 export class User extends Model<IUserDb, IUserConsumer> {
-    private users: db.ICollection;
-    public indexes: db.CollectionIndex[] = [
+    private users: mongoDb.ICollection;
+    public indexes: mongoDb.CollectionIndex[] = [
         {
             key: {
                 handle: 1,
@@ -44,7 +44,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public checkIfExists(handle: string): Promise<boolean> {
         // TODO: hash username and search
         const handleHash = handle;
-        const filter: db.IFilter = { handleh: handle };
+        const filter: mongoDb.IFilter = { handleh: handle };
         return this.exists(filter);
     }
 

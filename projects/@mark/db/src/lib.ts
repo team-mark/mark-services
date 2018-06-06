@@ -2,7 +2,7 @@
 // Initializes models of database collections
 // import * as models from './models';
 import { Account, Token, User, Mark } from './models';
-import { db } from './components';
+import { mongoDb } from './components';
 export { IAccountConsumer, IAccountDb, ITokenConsumer, ITokenDb, IUserConsumer, IUserDb } from './models';
 const debug = require('debug')('mark:db');
 
@@ -22,7 +22,7 @@ export let marks: Mark; // queries.marks;
 export { Account, Token, User, Mark };
 
 export function init(): Promise<void> {
-    return db.initalize()
+    return mongoDb.initalize()
         .then(() => {
 
             debug('connection complete, setting up mongo cache');

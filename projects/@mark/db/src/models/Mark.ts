@@ -1,6 +1,6 @@
 // Database Interface for the Marks (Post) collection
 
-import { db } from '../components';
+import { mongoDb } from '../components';
 import * as mongo from 'mongodb';
 import Model, { IModelConsumer, IModelDb } from './Model';
 
@@ -23,7 +23,7 @@ export interface IMarkDb extends IModelDb {
 const COLLECTION_NAME = 'marks';
 
 export class Mark extends Model<IMarkDb, IMarkConsumer> {
-    private marks: db.ICollection;
+    private marks: mongoDb.ICollection;
 
     public constructor() {
         super(COLLECTION_NAME);
@@ -66,7 +66,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     }
 
     public retrieveMarks(): Promise<IMarkDb[]> {
-        const filter: db.IFilter<IMarkDb> = {};
+        const filter: mongoDb.IFilter<IMarkDb> = {};
         return this.findMany({});
     }
 
