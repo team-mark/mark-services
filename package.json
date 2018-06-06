@@ -33,6 +33,7 @@
     "@types/node": "^8.0.55",
     "ansi-colors": "^1.1.0",
     "async": "^2.6.0",
+    "aws-sdk": "^2.252.1",
     "blake2": "^1.4.0",
     "blake2b": "^2.1.2",
     "body-parser": "~1.18.2",

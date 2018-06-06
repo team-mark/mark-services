@@ -1,28 +1,29 @@
 // Initializes the database
 // Initializes models of database collections
-// import * as models from './models';
-import { Account, Token, User, Mark } from './models';
-import { db } from './components';
-export { IAccountConsumer, IAccountDb, ITokenConsumer, ITokenDb, IUserConsumer, IUserDb } from './models';
+import { AccountInfo, Account, Token, User, Mark } from './models';
+import { mongoDb } from './components';
+export { IAccountInfoConsumer, IAccountInfoDb, ITokenConsumer, ITokenDb, IUserConsumer, IUserDb } from './models';
 const debug = require('debug')('mark:db');
 
 const collectionMap = {
+    accountInfo: AccountInfo,
     accounts: Account,
     tokens: Token,
     users: User,
     marks: Mark,
 } as any;
 
+export let accountInfo: AccountInfo; // queries.accounts;
 export let accounts: Account; // queries.accounts;
 export let tokens: Token; // queries.tokens;
 export let users: User; // queries.users;
 export let marks: Mark; // queries.marks;
 
 // Export class static functions
-export { Account, Token, User, Mark };
+export { AccountInfo, Token, User, Mark };
 
 export function init(): Promise<void> {
-    return db.initalize()
+    return mongoDb.initalize()
         .then(() => {
 
             debug('connection complete, setting up mongo cache');

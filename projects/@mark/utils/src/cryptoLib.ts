@@ -63,8 +63,12 @@ export function hashPhone(phone: number | string): Promise<string> {
     return hashGeneric(phone.toString(), 0, 'base64');
 }
 
-export function hash(phone: number): Promise<string> {
-    return hashGeneric(phone.toString(), 0, 'base64');
+/**
+ *
+ * @param toHash
+ */
+export function hash(toHash: string, toLength?: number): Promise<string> {
+    return hashGeneric(toHash, 0, 'base64');
 }
 
 export type Encoding = 'latin1' | 'base64' | 'hex';
@@ -146,4 +150,12 @@ function hashGeneric(toHash: string, iterations?: number, encoding?: Encoding): 
     //     // // return null;
 
     // }
+}
+
+export function XORStrings(a: string, b: string) {
+    const hexA = new Buffer(a).toString('hex');
+    const hexB = new Buffer(b).toString('hex');
+    const intA = parseInt(b);
+    const intB = parseInt(b);
+    return ;
 }

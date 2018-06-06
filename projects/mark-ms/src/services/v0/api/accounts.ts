@@ -4,7 +4,7 @@ module.exports = router;
 import * as db from '@mark/db';
 import { rest } from '@mark/utils';
 import { auth } from '@mark/data-utils';
-import { authentication } from '../../../utils';
+import { authentication, sns } from '../../../utils';
 const debug = require('debug')('mark:accounts');
 
 const { authBasic, authAnon, notAllowed } = auth;
@@ -42,14 +42,24 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                 } else {
 
                     const z_a = authentication.getZ_a(accountId, phoneh, handle, passwordh);
-                    
+                    const z_w = authentication.getZ_w(z_a, walletId, passwordh);
+
+                    return Promise.all([
+                        db.accounts.create(handle, linkI, refA, linkR),
+                        db.accountInfo.create(handle)
+                    ])
+                        .then(([account, accountInfo]) => {
+
+                        });
+
+                    sns.sendCode(phone, code);
                     // create z_a
 
                     // respond with state, PAD(salt) = blake2(accountId, handle, passwordh)
                     // link_a will be
                     // sms code\
 
-                    db.accounts.existsByPhoneHash
+                    db.accounts.existsByPhoneHash;
                 }
             })
             .catch((errorOrResponse: Error | rest.Response) => {
