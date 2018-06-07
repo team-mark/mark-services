@@ -1,3 +1,4 @@
 lib
 node_modules
 localconfig.json
+projects/mark-ai/src/python/__pycache__/

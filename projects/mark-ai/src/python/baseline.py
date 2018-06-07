@@ -22,12 +22,12 @@ tf.logging.set_verbosity(tf.logging.INFO)
 
 word2id, embedding_matrix = in_dat.load_embeddings()
 
-x_train_variable, y_train = in_dat.load_data('./data/train/ready', word2id, CASES_PER_FILE)
+x_train_variable, y_train = in_dat.load_training_data('./data/train/ready', word2id, CASES_PER_FILE)
 
 print(len(x_train_variable), 'train sequences')
 print(len(y_train), "train labels")
 
-x_eval_variable, y_eval = in_dat.load_data('./data/eval/ready', word2id, CASES_PER_FILE)
+x_eval_variable, y_eval = in_dat.load_training_data('./data/eval/ready', word2id, CASES_PER_FILE)
 
 print(len(x_eval_variable), 'eval sequences')
 print(len(y_eval), "eval labels")
