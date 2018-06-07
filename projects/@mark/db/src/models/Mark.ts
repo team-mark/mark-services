@@ -22,6 +22,9 @@ export interface IMarkDb extends IModelDb {
 
 const COLLECTION_NAME = 'marks';
 
+// 5/30/2018 around 1:06 in Unix epoch time
+const TIME_CONST = 1527699872;
+
 export class Mark extends Model<IMarkDb, IMarkConsumer> {
     private marks: mongoDb.ICollection;
 
@@ -44,6 +47,16 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         return (phat + z * z / (2 ** totalVotes) - z *
                 ((phat * (1 - phat) + z * z / (4 * totalVotes)) / totalVotes) ** 0.5) /
                 (1 + z * z / totalVotes);
+    }
+
+        // Algorithm 3 and 4 as defined in Mark design Document
+    // set newer to true when newer Marks should have a higher score
+    // set newer to false when older Marks should have a higher score
+    private static timeWeightedPopularity(popularity: number, time: number, newer: boolean): number {
+        if (newer)
+            return Math.log10(popularity) + (time - TIME_CONST) / 4500;
+        else
+            return Math.log10(popularity) + 4500 / (time - TIME_CONST);
     }
 
     public static map(mark: IMarkDb): IMarkConsumer {
