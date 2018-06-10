@@ -192,4 +192,9 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public getByHandle(handle: string): Promise<IUserDb> {
         return null;
     }
+
+    public existsByHandle(handle: string) {
+        const filter: mongoDb.IFilter<Partial<IUserDb>> = { handle };
+        return this.exists(filter);
+    }
 }

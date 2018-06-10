@@ -1,6 +1,7 @@
 import { mongoDb } from '../components';
 import * as mongo from 'mongodb';
 import { cryptoLib } from '@mark/utils';
+import { IAccountInfoDb } from './index';
 const debug = require('debug')('mark:Model');
 
 // Data structure to be passed and retrieved from
@@ -53,16 +54,6 @@ export default class Model<T extends IModelDb, T1 extends IModelConsumer> extend
                 return undefined;
             }
         }
-    }
-
-    public existsByPhoneHash(phoneh: string) {
-        const filter: mongoDb.IFilter<T> = { phoneh };
-        return this.exists(filter);
-    }
-
-    public existsByHandle(handle: string) {
-        const filter: mongoDb.IFilter<T> = { handle };
-        return this.exists(filter);
     }
 
     // Get single documents by id

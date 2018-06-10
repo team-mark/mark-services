@@ -71,16 +71,16 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
             passh = passHash;
 
             return Promise.all([
-                db.users.existsByPhoneHash(phone),
+                db.accountInfo.existsByPhoneHash(phoneh),
                 db.users.existsByHandle(handle)
             ]);
         })
-        .then(([userExists, handleExists]) => {
-            debug('user, handle exists ? ', userExists, handleExists);
-            if (handleExists) {
+        .then(([accountExists, userExists]) => {
+            debug('user, handle exists ? ', accountExists, userExists);
+            if (userExists) {
                 return Promise.reject(rest.Response.fromBadRequest('handle_taken', `Handle \`${handle}\` already registered`));
             }
-            if (userExists) {
+            if (accountExists) {
                 return Promise.reject(rest.Response.fromBadRequest('user_registered', 'User already registered'));
             }
 
@@ -134,112 +134,116 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
 
                             const roll3 = roll1Mod * roll2Mod;
 
-                            const kid = cryptoLib.hashKid(userId, roll3);
-                            const accountKey = `signup:account:${kid}`;
+                            return cryptoLib.hashKid(userId, roll3)
+                                .then(kid => {
 
-                            const accountInfoData = JSON.stringify({
-                                userId,
-                                phoneh,
-                                roll2: code
-                            });
+                                    const accountKey = `signup:account:${kid}`;
 
-                            const accountData = JSON.stringify({
-                                handle,
-                                passwordh,
-                            });
+                                    const accountInfoData = JSON.stringify({
+                                        userId,
+                                        phoneh,
+                                        roll2: code
+                                    });
 
-                            return new Promise<rest.Response>((resolve, reject) => {
-                                async.parallel([
-                                    cb =>
-                                        redisClient.get(accountInfoKey, (error: Error, reply: string) => {
-                                            if (error) {
-                                                cb(error);
-                                            } else {
-                                                cb(null, reply);
+                                    const accountData = JSON.stringify({
+                                        handle,
+                                        passwordh,
+                                    });
+
+                                    return new Promise<rest.Response>((resolve, reject) => {
+                                        async.parallel([
+                                            cb =>
+                                                redisClient.get(accountInfoKey, (error: Error, reply: string) => {
+                                                    if (error) {
+                                                        cb(error);
+                                                    } else {
+                                                        cb(null, reply);
+                                                    }
+                                                }),
+                                            cb =>
+                                                redisClient.get(accountKey, (error: Error, reply: string) => {
+                                                    if (error) {
+                                                        cb(error);
+                                                    } else {
+                                                        cb(null, reply);
+                                                    }
+                                                }),
+
+                                        ], (error: Error, [accountInfoReply, accountReply]: string[]) => {
+
+                                            if (error || accountInfoReply !== null || accountReply !== null) {
+                                                // state/code values collide with another signup session's
+                                                // state/code values. Ask to try again.
+                                                debug('error', error);
+                                                debug('get: accountInfoReply', accountInfoReply);
+                                                debug('get: accountReply', accountReply);
+                                                return reject(rest.Response.fromServerError());
                                             }
-                                        }),
-                                    cb =>
-                                        redisClient.get(accountKey, (error: Error, reply: string) => {
-                                            if (error) {
-                                                cb(error);
-                                            } else {
-                                                cb(null, reply);
-                                            }
-                                        }),
 
-                                ], (error: Error, [accountInfoReply, accountReply]: string[]) => {
+                                            // otherwise the values are open. continue.
 
-                                    if (error || accountInfoReply !== null || accountReply !== null) {
-                                        // state/code values collide with another signup session's
-                                        // state/code values. Ask to try again.
-                                        debug('error', error);
-                                        debug('get: accountInfoReply', accountInfoReply);
-                                        debug('get: accountReply', accountReply);
-                                        return reject(rest.Response.fromServerError());
-                                    }
+                                            const signupTimeout = 3 * 60; // 3 * 60 seconds = 3 minutes
 
-                                    // otherwise the values are open. continue.
+                                            async.parallel([
+                                                cb =>
+                                                    redisClient.setex(accountInfoKey, signupTimeout, accountInfoData, (error: Error, reply: string) => {
+                                                        if (error) {
+                                                            cb(error);
+                                                        } else {
+                                                            cb(null, reply);
+                                                        }
+                                                    })
+                                                ,
+                                                cb =>
+                                                    redisClient.setex(accountKey, signupTimeout, accountData, (error: Error, reply: string) => {
+                                                        if (error) {
+                                                            cb(error);
+                                                        } else {
+                                                            cb(null, reply);
+                                                        }
+                                                    })
 
-                                    const signupTimeout = 3 * 60; // 3 * 60 seconds = 3 minutes
+                                            ], (error: Error, [accountInfoReply, accountReply]: string[]) => {
 
-                                    async.parallel([
-                                        cb =>
-                                            redisClient.setex(accountInfoKey, signupTimeout, accountInfoData, (error: Error, reply: string) => {
-                                                if (error) {
-                                                    cb(error);
-                                                } else {
-                                                    cb(null, reply);
+                                                if (error || accountInfoReply !== 'OK' || accountReply !== 'OK') {
+                                                    // Something went wrong here. These should be 'OK'
+                                                    debug('error', error);
+                                                    debug('get: accountInfoReply', accountInfoReply);
+                                                    debug('get: accountReply', accountReply);
+                                                    return reject(rest.Response.fromServerError());
                                                 }
-                                            })
-                                        ,
-                                        cb =>
-                                            redisClient.setex(accountKey, signupTimeout, accountData, (error: Error, reply: string) => {
-                                                if (error) {
-                                                    cb(error);
-                                                } else {
-                                                    cb(null, reply);
-                                                }
-                                            })
 
-                                    ], (error: Error, [accountInfoReply, accountReply]: string[]) => {
+                                                cryptoLib.hash(userId, authentication.DEFAULT_HASH_RATE, handle)
+                                                    .then(pad => {
+                                                        const responseBody = {
+                                                            pad,
+                                                            roll: roll1,
+                                                            state,
+                                                            code
+                                                        };
+                                                        resolve(rest.Response.fromSuccess(responseBody));
+                                                    });
 
-                                        if (error || accountInfoReply !== 'OK' || accountReply !== 'OK') {
-                                            // Something went wrong here. These should be 'OK'
-                                            debug('error', error);
-                                            debug('get: accountInfoReply', accountInfoReply);
-                                            debug('get: accountReply', accountReply);
-                                            return reject(rest.Response.fromServerError());
-                                        }
+                                                // sns.sendCode(phone, code)
+                                                //     .then(response => {
 
-                                        cryptoLib.hash(userId, authentication.DEFAULT_HASH_RATE, handle)
-                                            .then(pad => {
-                                                const responseBody = {
-                                                    pad,
-                                                    roll: roll1,
-                                                    state,
-                                                    code
-                                                };
-                                                resolve(rest.Response.fromSuccess(responseBody));
+                                                //         cryptoLib.hash(accountId, authentication.DEFAULT_HASH_RATE, handle)
+                                                //             .then(pad => {
+                                                //                 const responseBody = {
+                                                //                     pad,
+                                                //                     roll: roll1,
+                                                //                     state,
+                                                //                 };
+                                                //                 resolve(rest.Response.fromSuccess(responseBody));
+                                                //             });
+
+                                                //     })
+                                                //     .catch(reject);
                                             });
-
-                                        // sns.sendCode(phone, code)
-                                        //     .then(response => {
-
-                                        //         cryptoLib.hash(accountId, authentication.DEFAULT_HASH_RATE, handle)
-                                        //             .then(pad => {
-                                        //                 const responseBody = {
-                                        //                     pad,
-                                        //                     roll: roll1,
-                                        //                     state,
-                                        //                 };
-                                        //                 resolve(rest.Response.fromSuccess(responseBody));
-                                        //             });
-
-                                        //     })
-                                        //     .catch(reject);
+                                        });
                                     });
                                 });
-                            });
+
                         });
                 });
         })
@@ -266,7 +270,7 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
 
 function checkHandleAvailability(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     const { handle } = req.body;
-    return db.users.checkIfExists(handle)
+    return db.users.existsByHandle(handle)
         .then(exists => {
             if (exists) {
                 return rest.Response.fromSuccess();

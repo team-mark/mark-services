@@ -30,4 +30,9 @@ export class AccountInfo extends Model<IAccountInfoDb, IAccountInfoConsumer> {
 
         return this.insertOne(accountInfo);
     }
+
+    public existsByPhoneHash(phoneh: string) {
+        const filter: mongoDb.IFilter<Partial<IAccountInfoDb>> = { phoneh };
+        return this.exists(filter);
+    }
 }
