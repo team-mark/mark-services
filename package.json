@@ -3,8 +3,9 @@
   "debug": "mark:*",
   "description": "Mark",
   "engines": {
-    "node": "^8.11.0"
+    "node": "=8.11.0"
   },
+  "engineStrict": true,
   "main": "index.js",
   "version": "0.0.0",
   "private": true,
@@ -66,8 +67,6 @@
     "source-map-support": "^0.5.5",
     "tslint": "^5.2.0",
     "typescript": "^2.3.2",
-    "urlsafe-base64": "^1.0.0",
-    "web3": "^1.0.0-beta.34",
-    "web3-typescript-typings": "^0.10.2"
+    "urlsafe-base64": "^1.0.0"
   }
 }

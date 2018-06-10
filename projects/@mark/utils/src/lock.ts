@@ -2,44 +2,25 @@ export type PromiseFunction = (...args: any[]) => Promise<any>;
 export class Mutex {
 
     private isLocked: boolean;
-    private queue: ((...args: any[]) => any)[];
+    private queue: (() => any)[];
 
-    public constructor(config: { isLocked: boolean }) {
-        this.isLocked = config.isLocked;
-    }
+    public constructor(private readyTest: () => boolean) { }
 
-    public lock() {
-        this.isLocked = true;
-    }
-
-    private ready() {
-        this.isLocked = false;
+    public ready() {
         this.executeAll();
     }
 
-    public executeWhenReady(funct: (...args: any[]) => any): void {
+    public await(funct: () => any): void {
+        this.queue = this.queue || [];
         this.queue.push(funct);
-        // otherwise call all stored items + this one;
-        if (!this.isLocked)
-            this.executeAll();
+
+        if (this.readyTest()) {
+            this.ready();
+        }
     }
 
     private executeAll(): void {
-        this.queue.forEach(f => f.call(f));
+        this.queue.forEach(f => f());
+        delete this.queue;
     }
 }
-
-// Example imlementation
-
-//  retrievedCredentials = undefined;
-//  m = new mutex.Mutex({ isLocked: true })
-//  request.getNewCredentials()
-//      .then(credentials => {
-//      retrievedCredentials = credentials;
-//      m.ready();
-//  })
-//
-//  somewhere else in the code
-//  m.onReady(() => {
-//   < use retrievedCredentials >
-//  })

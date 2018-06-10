@@ -1,3 +1,4 @@
+import { cryptoLib } from '@mark/utils';
 
 export function getPAD(handle: string, passwordh: string) {
     const h1 = handle.charAt(0);
@@ -7,44 +8,47 @@ export function getPAD(handle: string, passwordh: string) {
     return `${p}.${ad}`;
 }
 
-export function getZ_t(handle: string, passwordh: string, OTP: string): string {
+export function getRefT(handle: string, passwordh: string, OTP: string): Promise<string> {
     // p = first letter (handle)
     // q = first letter (pass)
     // r = max - q
     const PAD = getPAD(handle, passwordh);
     const { p, ad } = getPADParts(PAD);
-    const z_t = ''; // blake2(handle:password:OTP) walk (p^r) times
-    return z_t;
+    return cryptoLib.hash(`${handle}:${passwordh}:${OTP}`)
+        .then(refT => Promise.resolve(refT));
 }
 
-export function getZ_a(accountId: string, phoneh: string, handle: string, passwordh: string): string {
-    const z_a = ''; // blake2(accountId:phoneh:handle:passwordh)
-    return z_a;
+export function getRefA(accountId: string, phoneh: string, handle: string, passwordh: string): Promise<string> {
+    return cryptoLib.hash(`${accountId}:${phoneh}:${handle}:${passwordh}`)
+        .then(z_w => Promise.resolve(z_w));
 }
 
-export function getZ_w(z_a: string, walletId: string, passwordh: string): string {
-    const z_w = ''; // blake2(z_a:walletId:?password?)
-    return z_w;
+export function getRefI(z_a: string, walletAddress: string, passwordh: string): Promise<string> {
+    return cryptoLib.hash(`${z_a}:${walletAddress}:${passwordh}`)
+        .then(refI => Promise.resolve(refI));
 }
 
-export function getLink_q(PAD: string, OPT: string): string {
+export function getLinkQ(PAD: string, OTP: string): Promise<string> {
     const { p, ad } = getPADParts(PAD);
-    const link_q = ''; // blake2(p:OTP:ad) walk (p^ad) times
-    return link_q;
+    return cryptoLib.hash(`${p}:${OTP}:${ad}`)
+        .then(linkQ => Promise.resolve(linkQ));
 }
 
-export function getLink_r(PAD: string, handle: string, passwordh: string): string {
+export function getLinkR(handle: string, passwordh: string): Promise<string> {
+    const PAD = getPAD(handle, passwordh);
     const { p, ad } = getPADParts(PAD);
-    const link_r = ''; // blake2(p:handle:password:ad) walk (p^ad) times
-    return link_r;
+    return cryptoLib.hash(`${p}:${handle}:${passwordh}:${ad}`)
+        .then(linkR => Promise.resolve(linkR));
 }
 
-export function getLink_a(link_r: string, z_a: string) {
-    // return link_q XOR z_a
+export function getLinkA(linkR: string, refA: string): string {
+    const linkA = cryptoLib.XORAsciiStringsToHex(linkR, refA);
+    return linkA;
 }
 
-export function getLink_w(link_q: string, z_w: string) {
-    // return link_q XOR z_w
+export function getLinkW(linkQ: string, refW: string) {
+    const linkW = cryptoLib.XORAsciiStringsToHex(linkQ, refW);
+    return linkW;
 }
 
 export function getPADParts(PAD: string): { p: number, ad: number } {

@@ -9,6 +9,8 @@
   "license": "MIT",
   "dependencies": {
     "@types/node": "^8.0.55",
-    "debug": "~2.6.9"
+    "@types/redis": "^2.8.6",
+    "debug": "~2.6.9",
+    "redis": "^2.8.0"
   }
 }

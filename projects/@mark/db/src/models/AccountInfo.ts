@@ -19,13 +19,12 @@ export class AccountInfo extends Model<IAccountInfoDb, IAccountInfoConsumer> {
         this.accounts = this.collection;
     }
 
-    public create(handle: string): Promise<IAccountInfoDb> {
+    public create(phoneh: string, z_i: string): Promise<IAccountInfoDb> {
 
+        // const encryptedPrivateKey = ''; // z_a XOR privateKey;
 
-        const encryptedPrivateKey = ''; // z_a XOR privateKey;
-
-        const account: IAccountDb = {
-            handle,
+        const accountInfo: IAccountInfoDb = {
+            phoneh,
         };
 
         return this.insertOne(accountInfo);

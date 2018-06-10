@@ -1,3 +1,4 @@
 import * as token from './token';
 import * as auth from './auth';
-export { auth, token };
+import * as redisConnect from './redisConnect';
+export { auth, token, redisConnect };

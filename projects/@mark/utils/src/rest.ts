@@ -38,6 +38,12 @@ export class Response {
         return restResponse;
     }
 
+    public static fromBadRequest(reason: string): Response {
+        const body = { details: reason };
+        const restResponse = new Response(STATUS.BAD_REQUEST, body);
+        return restResponse;
+    }
+
     public static fromUnauthorized(): Response {
         const reason = 'unauthorized';
         const body = { details: reason };

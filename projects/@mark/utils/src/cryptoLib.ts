@@ -1,5 +1,6 @@
 import * as crypto from 'crypto';
 import * as lock from './lock';
+const xor = require('buffer-xor');
 const UrlSafeBase64Encode = require('urlsafe-base64');
 const blake2 = require('blake2');
 
@@ -18,8 +19,9 @@ export function charsetGenerator(...args: any[]): String {
 export const SHORT_CODE_CHARS = charsetGenerator(CharSets.ALPHA, CharSets.alpha, CharSets.numeric);
 export const AUTH_CODE_CHARS = charsetGenerator(CharSets.ALPHA, CharSets.alpha, CharSets.numeric, CharSets.urlSafeSpecial);
 
-export function getShortCode(length: number) {
+export function getShortCode(length: number): string {
     charsetGenerator();
+    return null;
 }
 export function createAuthToken(length: number) { }
 
@@ -59,16 +61,41 @@ export function generateSecureCode(length: number) {
     });
 }
 
+export function generateHexCode(length: number): Promise<string> {
+    return new Promise((resolve, reject) => {
+        crypto.randomFill(new Buffer(length / 2), (error: Error, buffer: Buffer) => {
+            if (error) {
+                return reject(error);
+            }
+
+            return resolve(buffer.toString('hex'));
+        });
+    });
+}
+
 export function hashPhone(phone: number | string): Promise<string> {
-    return hashGeneric(phone.toString(), 0, 'base64');
+    return hashGeneric(phone.toString(), 111, 'base64');
+}
+
+export function hashKid(accountId: any, iterations: number): Promise<string> {
+    return hashGeneric(accountId.toString(), iterations, 'base64');
+}
+
+export function hashPassword(password: string, iterations?: number): Promise<string> {
+    return hashGeneric(password, iterations || 111, 'base64');
 }
 
 /**
  *
  * @param toHash
+ * @param iterations
+ * @param toLength
  */
-export function hash(toHash: string, toLength?: number): Promise<string> {
-    return hashGeneric(toHash, 0, 'base64');
+export function hash(toHash: string, iterations?: number, key?: string): Promise<string> {
+    return hashGeneric(toHash, iterations, 'base64', key);
+}
+export function hashHex(toHash: string, iterations?: number, key?: string): Promise<string> {
+    return hashGeneric(toHash, iterations, 'hex', key);
 }
 
 export type Encoding = 'latin1' | 'base64' | 'hex';
@@ -78,84 +105,91 @@ export type Encoding = 'latin1' | 'base64' | 'hex';
  * @param iterations number of iterations
  * @param encoding string ecoding
  */
-function hashGeneric(toHash: string, iterations?: number, encoding?: Encoding): Promise<string> {
-    const walks = iterations || 0;
+function hashGeneric(toHash: string, iterations: number, encoding: Encoding, key?: string): Promise<string> {
+    const walks = iterations || 1;
     const enc = encoding || 'base64';
+    const salt = key || 'salt';
+    const keylen = 64;
 
-    // const promiseChain = generatePromiseChain<(item: string, encoding: string) => Promise<string>>(hashItem, walks);
-    // return promiseChain(toHash, enc);
-    return hashItem(toHash, encoding);
+    // const hashFunction = key ? hashWithBlake2bKeyed : hashWithBlake2b;
+    // const hashChain = chain(hashFunction, iterations);
+    // const hash = hashChain(toHash, encoding);
 
-    /**
-     *
-     * @param item
-     * @param encoding
-     */
-    function hashItem(item: string, encoding: string): Promise<string> {
-        const h = blake2.createHash('blake2b');
-        h.update(new Buffer(item));
-        const digest = h.digest('base64');
-        return Promise.resolve(digest);
-    }
+    return new Promise((resolve, reject) => {
+        crypto.pbkdf2(toHash, salt, iterations, keylen, 'blake2b', (error: Error, derivedKey: Buffer) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(derivedKey.toString(enc));
+            }
+        });
+    });
 
-    /**
-     *
-     * @param promiseFunction
-     * @param iterations
-     */
-    // function generatePromiseChain<T = (...args: any[]) => Promise<any>>(promiseFunction: (...args: any[]) => Promise<any>, iterations: number): T {
-    //     const functionChain: ((...args: any[]) => Promise<any>)[]  = [];
-    //     const parent: (...args: any[]) => Promise<any> = (...args: any[]) => {
-    //         return new Promise((resolve, reject) => {
-    //             let i = 0;
+    // return hash;
+    // /**
+    //  * Chains a function sequentially `iterations` number of times. Output from
+    //  * the previous transition is fed into the next transition.
+    //  * e.g. if the function `add1` is used with 3 iterations and primed with 1,
+    //  * then the output to the returned function would be 4.
+    //  * @param funct function to be chained
+    //  * @param iterations number of chian links
+    //  */
+    // function chain<T = any, T2 = (...args: T[]) => Promise<T>>(funct: T2, iterations: number) {
+    //     return (...args: T[]) => {
+    //         let index = 0;
+    //         let builder: Promise<T> = Promise.resolve(...args) as any;
 
-    //             const par = promiseFunction;
+    //         while (index++ < iterations) {
+    //             builder = builder.then(funct as any);
+    //         }
 
-    //             while (i++ < iterations) {
-    //                 // functionChain.push(promiseFunction);
-    //                 par.
-    //             }
-
-    //             functionChain.reduce((acc, ))
-
-    //         });
+    //         return builder;
     //     };
+    // }
 
-    //     return parent as any as T;
+    // /**
+    //  *
+    //  * @param item
+    //  * @param encoding
+    //  */
+    // function hashWithBlake2b(item: string, encoding: string): Promise<string> {
+    //     const h = blake2.createHash('blake2b');
+    //     h.update(new Buffer(item));
+    //     const digest = h.digest('base64');
+    //     return Promise.resolve(digest);
+    // }
 
-    //     // // return (...args: any[]) => new Promise((resolve, reject) => {
-
-    //     // //     let i = 0;
-
-    //     // //     while(i < iterations) {
-    //     // //         promiseFunction(...args)
-    //     // //             .then(callback)
-    //     // //     }
-    //     // // //    return null; // promise(...args);
-    //     // // });
-    //     // // return (...args: any[]) => null;
-    //     // const parent: (...args: any[]) => Promise<any> = (...args: any[]) => {
-    //     //     return new Promise((resolve, reject) => {
-    //     //         let i = 0;
-
-    //     //         while (i++ < iterations) {
-    //     //             promiseFunction(...args);
-    //     //         }
-    //     //     });
-    //     // };
-
-    //     // const m = new lock.Mutex({ isLocked: true });
-
-    //     // return parent as any as T;
-    //     // // return null;
-
+    // function hashWithBlake2bKeyed(item: string, key: string, encoding: string): Promise<string> {
+    //     const h = blake2.createKeyedhash('blake2b', new Buffer(key));
+    //     h.update(new Buffer(item));
+    //     const digest = h.digest('base64');
+    //     return Promise.resolve(digest);
     // }
 }
 
-export function XORStrings(a: string, b: string) {
-    const hexA = new Buffer(a).toString('hex');
-    const hexB = new Buffer(b).toString('hex');
-    const intA = parseInt(b);
-    const intB = parseInt(b);
-    return ;
+// export function XORAsciiStrings(a: string, b: string) {
+//     const hexA = new Buffer(a, 'ascii');
+//     const hexB = new Buffer(b, 'ascii');
+//     const bufHexC = xor(hexA, hexB);
+//     // const intA = parseInt(hexA, 16);
+//     // const intB = parseInt(hexB, 16);
+//     // const intC = intA ^ intB;
+//     // const hexC = intC.toString(16);
+//     // const c = new Buffer(hexC, 'hex').toString();
+//     // return c;
+// }
+
+export function XORAsciiStringsToHex(a: string, b: string) {
+    const bufHexA = new Buffer(a, 'ascii');
+    const bufHexB = new Buffer(b, 'ascii');
+    const bufHexC = xor(bufHexA, bufHexB);
+    const c = bufHexC.toString('hex');
+    return c;
+}
+export function XORHexStrings(a: string, b: string) {
+    const bufHexA = new Buffer(a, 'hex');
+    const bufHexB = new Buffer(b, 'hex');
+    const bufHexC = xor(bufHexA, bufHexB);
+    const c = bufHexC.toString('hex');
+    return c;
 }

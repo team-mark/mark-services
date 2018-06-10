@@ -1,8 +1,25 @@
 // Initializes the database
 // Initializes models of database collections
-import { AccountInfo, Account, Token, User, Mark } from './models';
+import {
+    Account,
+    AccountInfo,
+    Mark,
+    Token,
+    User
+} from './models';
 import { mongoDb } from './components';
-export { IAccountInfoConsumer, IAccountInfoDb, ITokenConsumer, ITokenDb, IUserConsumer, IUserDb } from './models';
+export {
+    IAccountDb,
+    IAccountConsumer,
+    IMarkConsumer,
+    IMarkDb,
+    IAccountInfoConsumer,
+    IAccountInfoDb,
+    ITokenConsumer,
+    ITokenDb,
+    IUserConsumer,
+    IUserDb
+} from './models';
 const debug = require('debug')('mark:db');
 
 const collectionMap = {
