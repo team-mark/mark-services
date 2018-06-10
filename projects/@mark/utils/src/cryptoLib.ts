@@ -73,7 +73,7 @@ export function generateSecureCode(length: number) {
 
             const h = blake2.createHash('blake2b');
             h.update(buffer);
-            const digest = h.digest(Encoding.base64);
+            const digest: string = h.digest(Encoding.base64);
 
             return resolve(digest);
         });
@@ -206,15 +206,15 @@ export function XORStrings(a: string, aEncoding: string, b: string, bEncoding: s
 //     return XORStrings(a, Encoding.ascii, b, Encoding.ascii, Encoding.hex);
 // }
 
-export function XORAsciiStringsToBase64(a: string, b: string) {
+export function XORAsciiStringsToBase64(a: string, b: string): string {
     return XORStrings(a, Encoding.ascii, b, Encoding.ascii, Encoding.base64);
 }
 
-export function XORHexStrings(a: string, b: string) {
+export function XORHexStrings(a: string, b: string): string {
     return XORStrings(a, Encoding.hex, b, Encoding.hex, Encoding.hex);
 }
 
-export function XORBase64Strings(a: string, b: string) {
+export function XORBase64Strings(a: string, b: string): string {
     return XORStrings(a, Encoding.base64, b, Encoding.base64, Encoding.base64);
 }
 
@@ -223,7 +223,7 @@ export function XORBase64Strings(a: string, b: string) {
  * @param linkOrRefPK e.g. 65587bb02cB4FF5DD109131F36123bb6ba6d6d32 // 40 chars
  * @param privateKey e.g. 0x8f56Abb01CB4FF518099133F3612A306ba6d6dF9 // 42 chars
  */
-export function XorEthereumPrivateKey(linkOrRefPK: string, privateKey: string) {
+export function XorEthereumPrivateKey(linkOrRefPK: string, privateKey: string): string {
     const PK = privateKey.substring(2, privateKey.length);
     return XORStrings(linkOrRefPK, Encoding.base64, PK, Encoding.base64, Encoding.base64);
 }

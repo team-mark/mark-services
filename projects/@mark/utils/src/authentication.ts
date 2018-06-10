@@ -60,23 +60,23 @@ export function getRefT(handle: string, passwordh: string, OTP: string): Promise
 
 /**
  * Reference info on Account. Point to by linkA, unlocked with linkQ.
- * @param accountId
+ * @param userId
  * @param phoneh
  * @param handle
  * @param passwordh
  */
-export function getRefA(accountId: string, handle: string, passwordh: string): Promise<string> {
+export function getRefU(userId: string, handle: string, passwordh: string): Promise<string> {
     const PAD = getPAD(handle, passwordh);
     const { p, ad } = getPADParts(PAD);
     const MAX_CHAR = 127; // max char value (DEL)
     const r = 127 - ad;
     const iterations = p * r;
 
-    const tohash = `${accountId}:${handle}:${passwordh}`;
+    const tohash = `${userId}:${handle}:${passwordh}`;
     // const salt = `${passwordh}:${handle}`;
 
     return cryptoLib.hash(tohash, iterations)
-        .then(refA => Promise.resolve(refA));
+        .then(refU => Promise.resolve(refU));
 }
 
 /**
@@ -86,9 +86,9 @@ export function getRefA(accountId: string, handle: string, passwordh: string): P
  * @param passwordh
  * @return BASE64 STRING
  */
-export function getRefI(refA: string, walletAddress: string, passwordh: string): Promise<string> {
+export function getRefI(refU: string, walletAddress: string, passwordh: string): Promise<string> {
     const iterations = DEFAULT_HASH_RATE;
-    const tohash = `${refA}:${walletAddress}:${passwordh}`;
+    const tohash = `${refU}:${walletAddress}:${passwordh}`;
     // const salt = `${walletAddress}:${passwordh}`;
 
     return cryptoLib.hash(tohash, iterations)
@@ -101,7 +101,8 @@ export function getRefI(refA: string, walletAddress: string, passwordh: string):
  * @param OTP
  * @return BASE64 STRING
  */
-export function getLinkQ(PAD: string, OTP: string): Promise<string> {
+export function getLinkQ(handle: string, passwordh: string, OTP: string): Promise<string> {
+    const PAD = getPAD(handle, passwordh);
     const { p, ad } = getPADParts(PAD);
     const MAX_CHAR = 127; // max char value (DEL)
     const r = 127 - ad;
@@ -136,11 +137,11 @@ export function getLinkR(handle: string, passwordh: string): Promise<string> {
 /**
  * Linking reference from account to account info
  * @param linkR
- * @param refA
+ * @param refU
  * @return BASE64 STRING
  */
-export function getLinkI(linkR: string, refA: string): string {
-    const linkA = cryptoLib.XORBase64Strings(linkR, refA);
+export function getLinkI(linkR: string, refU: string): string {
+    const linkA = cryptoLib.XORBase64Strings(linkR, refU);
     return linkA;
 }
 
@@ -148,11 +149,11 @@ export function getLinkI(linkR: string, refA: string): string {
  *
  * Linking reference from token to account
  * @param linkQ
- * @param refW
+ * @param refU
  * @return BASE64 STRING
  */
-export function getLinkA(linkQ: string, refW: string) {
-    const linkA = cryptoLib.XORBase64Strings(linkQ, refW);
+export function getLinkA(linkQ: string, refU: string) {
+    const linkA = cryptoLib.XORBase64Strings(linkQ, refU);
     return linkA;
 }
 
@@ -172,7 +173,6 @@ export function getRefPK(linkPK: string, privateKey: string) {
  * @param userId
  * @param handle
  * @param linkR
- * @param refA
  * @param linkI
  * @return BASE64 STRING of length 40
  */

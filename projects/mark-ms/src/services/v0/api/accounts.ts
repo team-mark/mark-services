@@ -85,13 +85,14 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
             }
 
             const PAD = authentication.getPAD(handle, passwordh);
-            const userId = db.newObjectId().toHexString();
+            const userId = db.User.mapId(db.newObjectId());
+
             debug('PAD', PAD);
             debug('userId', userId);
 
             return Promise.all([
                 authentication.getLinkR(handle, passwordh),
-                authentication.getRefA(userId, handle, passwordh),
+                authentication.getRefU(userId, handle, passwordh),
                 authentication.getLinkPK(userId, handle, passwordh)
             ])
                 .then(([linkR, _refA, linkPK]) => {
@@ -111,41 +112,44 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                                 db.accountInfo.create(phoneh, refI),
                                 redisConnect.instance(),
                                 cryptoLib.generateSecureCode(18),
-                                cryptoLib.generateShortCode(6),
-                                cryptoLib.generateShortCode(6)
+                                cryptoLib.generateShortCode(6, cryptoLib.Encoding.hex),
+                                cryptoLib.generateShortCode(6, cryptoLib.Encoding.hex),
+                                cryptoLib.generateShortCode(6, cryptoLib.Encoding.hex)
                             ]);
                         })
-                        .then(([accountInfoRecord, redisClient, state, roll1, code]) => {
+                        .then(([accountInfoRecord, redisClient, state, roll1, roll2, code]) => {
 
                             // state, code to decimal
                             // multiple values
                             // accountInfoKey = hash(accountId, handle) walk (roll3 times)
 
                             const accountInfoKey = `signup:accountInfo:${state}.${code}`;
+                            const accountInfoId = db.AccountInfo.mapId(accountInfoRecord._id);
 
-                            let roll1Mod = parseInt(roll1) % 100;
-                            let roll2Mod = parseInt(code) % 100;
+                            let roll1Mod = parseInt(roll1, 16) % 100;
+                            let roll2Mod = parseInt(roll2, 16) % 100;
                             if (roll1Mod === 0) {
-                                roll1Mod = parseInt(roll1) % roll2Mod;
+                                roll1Mod = parseInt(roll1, 16) % roll2Mod;
                             }
                             if (roll2Mod === 0) {
-                                roll2Mod = parseInt(code) % roll1Mod;
+                                roll2Mod = parseInt(roll2, 16) % roll1Mod;
                             }
 
                             const roll3 = roll1Mod * roll2Mod;
 
-                            return cryptoLib.hashKid(userId, roll3)
+                            return cryptoLib.hashKid(accountInfoId, roll3)
                                 .then(kid => {
 
                                     const accountKey = `signup:account:${kid}`;
 
                                     const accountInfoData = JSON.stringify({
-                                        userId,
+                                        accountInfoId,
                                         phoneh,
-                                        roll2: code
+                                        roll2
                                     });
 
                                     const accountData = JSON.stringify({
+                                        userId,
                                         handle,
                                         passwordh,
                                     });
@@ -261,11 +265,129 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
 
 function signupValidate(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     // res.send({ username: 'ferrantejake' });
-    const { key, roll, state, secret: deviceSecret } = req.body;
+    const { key, roll: roll1, state, secret: deviceSecret, code } = req.body;
 
     // const refT = authentication.getRefT(handle, passwordh, deviceSecret);
 
-    return null;
+    // state, code to decimal
+    // multiple values
+    // accountInfoKey = hash(accountId, handle) walk (roll3 times)
+
+    const accountInfoKey = `signup:accountInfo:${state}.${code}`;
+
+    return new Promise((resolve, reject) => {
+
+        redisConnect.instance()
+            .then(redisClient => {
+
+                redisClient.get(accountInfoKey, (error: Error, reply: string) => {
+                    if (error) {
+                        return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+                    }
+                    if (!reply) {
+                        return resolve(rest.Response.fromBadRequest('invalid_session', 'could not identify signup session'));
+                    }
+
+                    let accountInfo: { accountInfoId: string, roll2: string, phoneh: string };
+                    try {
+                        accountInfo = JSON.parse(reply);
+                    } catch (e) {
+                        debug(e);
+                        return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+                    }
+
+                    let roll1Mod = parseInt(roll1, 16) % 100;
+                    let roll2Mod = parseInt(accountInfo.roll2, 16) % 100;
+                    if (roll1Mod === 0) {
+                        roll1Mod = parseInt(roll1, 16) % roll2Mod;
+                    }
+                    if (roll2Mod === 0) {
+                        roll2Mod = parseInt(accountInfo.roll2, 16) % roll1Mod;
+                    }
+
+                    const roll3 = roll1Mod * roll2Mod;
+
+                    return cryptoLib.hashKid(accountInfo.accountInfoId, roll3)
+                        .then(kid => {
+
+                            const accountKey = `signup:account:${kid}`;
+
+                            // const accountInfoData = JSON.stringify({
+                            //     accountInfoId,
+                            //     phoneh,
+                            //     roll2: code
+                            // });
+
+                            // const accountData = JSON.stringify({
+                            //     handle,
+                            //     passwordh,
+                            // });
+
+                            // async.parallel([
+                            //     cb =>
+                            //         redisClient.get(accountInfoKey, (error: Error, reply: string) => {
+                            //             if (error) {
+                            //                 cb(error);
+                            //             } else {
+                            //                 cb(null, reply);
+                            //             }
+                            //         }),
+                            //     cb =>
+                            //         redisClient.get(accountKey, (error: Error, reply: string) => {
+                            //             if (error) {
+                            //                 cb(error);
+                            //             } else {
+                            //                 cb(null, reply);
+                            //             }
+                            //         }),
+
+                            // ], (error: Error, [accountInfoReply, accountReply]: string[]) => {
+
+                            // });
+
+                            redisClient.get(accountKey, (error: Error, reply: string) => {
+                                if (error) {
+                                    debug(error);
+                                    return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+                                }
+                                if (!reply) {
+                                    return resolve(rest.Response.fromBadRequest('invalid_session', 'could not identify signup session'));
+                                }
+
+                                // return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+
+                                let accountInfo: { userId: string, handle: string, passwordh: string };
+                                try {
+                                    accountInfo = JSON.parse(reply);
+                                } catch (e) {
+                                    debug(e);
+                                    return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+                                }
+                                const { userId, handle, passwordh } = accountInfo;
+
+                                Promise.all([
+                                    authentication.getRefT(handle, passwordh, deviceSecret),
+                                    authentication.getLinkQ(handle, passwordh, deviceSecret),
+                                    authentication.getRefU(userId, handle, passwordh)
+                                ])
+                                    .then(([refT, linkQ, refU]) => {
+                                        const linkA = authentication.getLinkA(linkQ, refU);
+
+
+                                        db.tokens.getById .create(linkA)
+                                    });
+
+                            });
+
+                        });
+
+                });
+
+            })
+            .catch(error => {
+                debug(error);
+            });
+    });
 }
 
 function checkHandleAvailability(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
