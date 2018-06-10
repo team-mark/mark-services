@@ -1,16 +1,16 @@
-// Initializes the database
-// Initializes models of database collections
 import {
-    Account,
+    // Account,
     AccountInfo,
     Mark,
     Token,
     User
 } from './models';
 import { mongoDb } from './components';
+// Initializes the database
+// Initializes models of database collections
 export {
-    IAccountDb,
-    IAccountConsumer,
+    // IAccountDb,
+    // IAccountConsumer,
     IMarkConsumer,
     IMarkDb,
     IAccountInfoConsumer,
@@ -20,15 +20,18 @@ export {
     IUserConsumer,
     IUserDb
 } from './models';
+
 const debug = require('debug')('mark:db');
 
 const collectionMap = {
     accountInfo: AccountInfo,
-    accounts: Account,
+    // accounts: Account,
     tokens: Token,
     users: User,
     marks: Mark,
 } as any;
+
+export const newObjectId = mongoDb.newObjectId;
 
 export let accountInfo: AccountInfo; // queries.accounts;
 export let accounts: Account; // queries.accounts;

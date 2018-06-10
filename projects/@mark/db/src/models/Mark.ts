@@ -72,5 +72,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
 
     public postMark(doc: any): Promise<mongo.InsertOneWriteOpResult> {
         return this.insertOne(doc);
+
+        
     }
 }

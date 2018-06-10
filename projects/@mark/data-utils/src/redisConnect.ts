@@ -10,8 +10,6 @@ const {
 const port = +REDIS_PORT;
 const options = {};
 
-const client = redis.createClient(port, host, options);
-
 let _instance: redis.RedisClient;
 let _subscriber: redis.RedisClient;
 
@@ -33,6 +31,9 @@ export function init(): Promise<void> {
 function create(): Promise<redis.RedisClient> {
     return new Promise((resolve, reject) => {
         const client = redis.createClient(port, host, options);
+
+        console.log('redis credentials', host, port, REDIS_SECRET);
+
         client.auth(REDIS_SECRET, (error: Error, result: string) => {
             client.on('error', handleError);
             if (result === 'OK') {
@@ -47,35 +48,37 @@ function create(): Promise<redis.RedisClient> {
 }
 
 export function instance(): Promise<redis.RedisClient> {
-    if (!instanceMutex) {
-        instanceMutex = new lock.Mutex(instanceReady);
-        return create()
-            .then(client => {
-                _instance = client;
-                instanceMutex.ready();
-                return Promise.resolve(_instance);
-            });
-    } else {
-        return new Promise(resolve => {
+    return new Promise(resolve => {
+        if (!instanceMutex) {
+            instanceMutex = new lock.Mutex(instanceReady);
             instanceMutex.await(() => { resolve(_instance); });
-        });
-    }
+            return create()
+                .then(client => {
+                    _instance = client;
+                    instanceMutex.ready();
+                    // return Promise.resolve(_instance);
+                });
+        } else {
+            instanceMutex.await(() => { resolve(_instance); });
+        }
+    });
 }
 
 export function subscriber(): Promise<redis.RedisClient> {
-    if (!subscriberMutex) {
-        subscriberMutex = new lock.Mutex(subscriberReady);
-        return create()
-            .then(client => {
-                _subscriber = client;
-                subscriberMutex.ready();
-                return Promise.resolve(_subscriber);
-            });
-    } else {
-        return new Promise(resolve => {
+    return new Promise(resolve => {
+        if (!subscriberMutex) {
+            subscriberMutex = new lock.Mutex(subscriberReady);
             subscriberMutex.await(() => { resolve(_subscriber); });
-        });
-    }
+            return create()
+                .then(client => {
+                    _subscriber = client;
+                    subscriberMutex.ready();
+                    return Promise.resolve(_subscriber);
+                });
+        } else {
+            subscriberMutex.await(() => { resolve(_subscriber); });
+        }
+    });
 }
 
 function handleError(error: Error) {

@@ -16,10 +16,14 @@ api.use('/tokens', tokens);
 api.use('/accounts', accounts);
 api.use('/marks', marks);
 
-router.use('/api', api);
+router.use(`/api`, api);
 router.use(`/api/${currentVersion}`, api);
 
-router.use('/', index);
+router.get('/', index);
+
+router.use('/', (req: express.Request, res: express.Response) => {
+    res.sendStatus(404);
+});
 
 // Home page
 function index(req: express.Request, res: express.Response, next: express.NextFunction): void {

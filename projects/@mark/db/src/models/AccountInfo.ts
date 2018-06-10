@@ -6,7 +6,7 @@ export interface IAccountInfoConsumer extends IModelConsumer {
 }
 export interface IAccountInfoDb extends IModelDb {
     phoneh: string;
-    z_i: string;
+    refI: string;
 }
 
 const COLLECTION_NAME = 'accountInfo';
@@ -19,12 +19,13 @@ export class AccountInfo extends Model<IAccountInfoDb, IAccountInfoConsumer> {
         this.accounts = this.collection;
     }
 
-    public create(phoneh: string, z_i: string): Promise<IAccountInfoDb> {
+    public create(phoneh: string, refI: string): Promise<IAccountInfoDb> {
 
         // const encryptedPrivateKey = ''; // z_a XOR privateKey;
 
         const accountInfo: IAccountInfoDb = {
             phoneh,
+            refI
         };
 
         return this.insertOne(accountInfo);

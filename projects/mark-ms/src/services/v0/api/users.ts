@@ -22,7 +22,7 @@ function getAccount(req: express.Request, res: express.Response, next: express.N
     return db.users.getByHandle(handle)
         .then(user => {
             if (user) {
-                return Promise.resolve(rest.Response.fromSuccess(db.User.map(user)));
+                return Promise.resolve(rest.Response.fromSuccess(db.users(user)));
             } else {
                 return Promise.resolve(rest.Response.fromNotFound({ handle }));
             }

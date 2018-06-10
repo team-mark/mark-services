@@ -38,8 +38,8 @@ export class Response {
         return restResponse;
     }
 
-    public static fromBadRequest(reason: string): Response {
-        const body = { details: reason };
+    public static fromBadRequest(code: string, reason: string): Response {
+        const body = { code, details: reason };
         const restResponse = new Response(STATUS.BAD_REQUEST, body);
         return restResponse;
     }
@@ -51,9 +51,10 @@ export class Response {
         return restResponse;
     }
 
-    public static fromServerError(): Response {
-        const reason = 'database error';
-        const body = { details: reason };
+    public static fromServerError(code?: string, reason?: string): Response {
+        code = code || 'server_error';
+        reason = reason || 'internal server error';
+        const body = { code, details: reason };
         const restResponse = new Response(STATUS.INTERNAL_SERVER_ERROR, body);
         return restResponse;
     }

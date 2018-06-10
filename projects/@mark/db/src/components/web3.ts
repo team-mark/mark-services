@@ -1,7 +1,8 @@
-import * as W3 from 'web3';
-const Web3 = W3.default;
+const Web3 = require('web3');
 
-let _instance: W3.default;
+// const Web3 = W3;
+
+let _instance: any; // Web3.default;
 
 export function init() {
     if (!_instance) {
@@ -10,7 +11,7 @@ export function init() {
     }
 }
 
-export function getInstance(): W3.default {
+export function getInstance() {
     if (!_instance) {
         init();
     }
