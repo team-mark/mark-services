@@ -1,11 +1,13 @@
 import Model, { IModelConsumer, IModelDb } from './Model';
-import { cryptoLib } from '../../../utils/lib/index';
+import { cryptoLib } from '@mark/utils';
 
 export interface ITokenConsumer extends IModelConsumer {
     token: string;
 }
 export interface ITokenDb extends IModelDb {
     token: string;
+    refT: string;
+    linkA: string;
 }
 
 const COLLECTION_NAME = 'tokens';
@@ -15,14 +17,16 @@ export class Token extends Model<ITokenDb, ITokenConsumer> {
         super(COLLECTION_NAME);
     }
 
-    public whitelist(linkA: string): Promise<ITokenDb> {
-
-        return cryptoLib.generateSecureCode(64)
+    public whitelist(refT: string, linkA: string): Promise<ITokenDb> {
+        const TOKEN_LENGTH = 64;
+        return cryptoLib.generateSecureCode(cryptoLib.AUTH_CODE_CHARS, TOKEN_LENGTH, true)
             .then(tokenString => {
 
                 const token: ITokenDb = {
                     token: tokenString,
-                    _id: null
+                    _id: null,
+                    refT,
+                    linkA
                 };
                 return this.insertOne(token);
             });

@@ -1,7 +1,7 @@
 import * as async from 'async';
 import * as db from '@mark/db';
 import * as express from 'express';
-import { auth, redisConnect } from '@mark/data-utils';
+import { auth, redisConnect, token } from '@mark/data-utils';
 import { sns } from '../../../utils';
 import { cryptoLib, rest, authentication } from '@mark/utils';
 const router = express.Router();
@@ -373,8 +373,12 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
                                     .then(([refT, linkQ, refU]) => {
                                         const linkA = authentication.getLinkA(linkQ, refU);
 
+                                        db.tokens.whitelist(refT, linkA)
+                                            .then(authToken => {
 
-                                        db.tokens.getById .create(linkA)
+                                                resolve(rest.Response.fromSuccess({ token: authToken.token }));
+
+                                            });
                                     });
 
                             });
