@@ -111,13 +111,31 @@ interface FindAndModifyWriteOpResultObject<T> {
 
 export class User extends Model<IUserDb, IUserConsumer> {
     private users: mongoDb.ICollection;
+    public indexes: mongoDb.CollectionIndex[] = [
+        {
+            key: {
+                handle: 1,
+            },
+            name: 'handle_index_v0',
+            unique: true
+        },
+    ];
 
     public constructor() {
         super(COLLECTION_NAME);
         this.users = this.collection;
     }
 
-    public create(userId: string | object, handle: string, refU: string,  linkPK: string): Promise<IUserDb> {
+    public static map(user: IUserDb): IUserConsumer {
+        const mappedUser: IUserConsumer = {
+            handle: user.handle,
+            address: user.address,
+            // id: User.mapId(user._id)
+        };
+        return mappedUser;
+    }
+
+    public create(userId: string | object, handle: string, refU: string, linkPK: string): Promise<IUserDb> {
 
         const web3 = W3.getInstance();
         const ethWallet: IEthereumAccount = web3.eth.accounts.create();
@@ -146,6 +164,12 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
         debug('user', user);
         return this.insertOne(user);
+    }
+    public checkIfExists(handle: string): Promise<boolean> {
+        // TODO: hash username and search
+        const handleHash = handle;
+        const filter: mongoDb.IFilter = { handleh: handle };
+        return this.exists(filter);
     }
 
     public updateById(id: string | object, modifications: any): Promise<IUserDb> {

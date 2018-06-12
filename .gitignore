@@ -2,4 +2,5 @@ lib
 node_modules
 localconfig.json
 
-**/*/testing
+**/*/testing/**/*
+projects/mark-ai/src/python/__pycache__/

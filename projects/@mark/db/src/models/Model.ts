@@ -12,7 +12,7 @@ export interface IModelDb {
 
 // Format data to be given to the client
 export interface IModelConsumer {
-    id: string;
+    id?: string;
 }
 
 export default class Model<T extends IModelDb, T1 extends IModelConsumer> extends mongoDb.Collection<T> {

@@ -10,7 +10,7 @@ from os.path import isfile, join
 
 UNKNOWN_INDEX = 0
 
-def load_embeddings():
+def load_embeddings(path='glove.twitter.27B.25d.txt'):
 	word2id = {'<unk>': 0, '<hashtag>': 1, '<all caps>': 2, '<url>': 3, '<smile>': 4,
 				'lolface': 5, '<sadface>': 6, '<neutralface>': 7, '<heart>': 8, '<number>': 9,
 				'<repeat>': 10, '<elong>': 11}
@@ -18,7 +18,7 @@ def load_embeddings():
 	embedding_matrix = [np.random.uniform(-1, 1, size=25) for _ in range(token_start)] # add in special tokens
 	count = 0
 	
-	with open('glove.twitter.27B.25d.txt','r', encoding="utf-8") as file:
+	with open(path,'r', encoding="utf-8") as file:
 		for index, line in enumerate(file):
 			if(index != 38522): #line 38522 has incorrect encoding (or something similar)
 				row = line.split()
@@ -31,7 +31,7 @@ def load_embeddings():
 
 	return word2id, np.array(embedding_matrix, dtype=np.float32)
 
-def load_data(path, word2id, cases_per_file=None):
+def load_training_data(path, word2id, cases_per_file=None):
 	tweet_ids = []
 
 	files = listdir(path)
