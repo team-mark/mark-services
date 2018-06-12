@@ -2,7 +2,7 @@ import { mongoDb } from '../components';
 import * as mongo from 'mongodb';
 import Model, { IModelConsumer, IModelDb } from './Model';
 
-export interface ILikeConsumer extends IModelConsumer {
+export interface IDislikeConsumer extends IModelConsumer {
     ownerId: string;
     postId: string;
 }
@@ -12,9 +12,9 @@ export interface ILikeDb extends IModelDb {
     postId: string;
 }
 
-const COLLECTION_NAME = 'likes';
+const COLLECTION_NAME = 'dilikes';
 
-export class Like extends Model<ILikeDb, ILikeConsumer> {
+export class Like extends Model<ILikeDb, IDislikeConsumer> {
     private likes: mongoDb.ICollection;
 
     public constructor() {
@@ -22,9 +22,9 @@ export class Like extends Model<ILikeDb, ILikeConsumer> {
         this.likes = this.collection;
     }
 
-    public static map(like: ILikeDb): ILikeConsumer {
+    public static map(like: ILikeDb): IDislikeConsumer {
 
-        const mapped: ILikeConsumer = {
+        const mapped: IDislikeConsumer = {
             ownerId: like.ownerId.toString(),
             postId: like.postId
         };
