@@ -1,5 +1,6 @@
 import * as crypto from 'crypto';
 import * as lock from './lock';
+import { DEFAULT_HASH_RATE } from './authentication';
 const xor = require('buffer-xor');
 const UrlSafeBase64Encode = require('urlsafe-base64');
 const blake2 = require('blake2');
@@ -104,7 +105,10 @@ export function hashKid(accountId: any, iterations: number): Promise<string> {
 }
 
 export function hashPassword(password: string, iterations?: number): Promise<string> {
-    return hashGeneric(password, iterations || 111, Encoding.base64);
+    return hashGeneric(password, iterations || DEFAULT_HASH_RATE, Encoding.base64);
+}
+export function hashDeviceSecret(secret: string): Promise<string> {
+    return hashGeneric(secret, DEFAULT_HASH_RATE, Encoding.base64);
 }
 
 /**

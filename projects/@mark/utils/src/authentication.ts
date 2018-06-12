@@ -51,10 +51,10 @@ export function getRefT(handle: string, passwordh: string, OTP: string): Promise
     const r = 127 - ad;
     const iterations = p * r;
 
-    const toash = `${handle}:${passwordh}:${OTP}`;
+    const tohash = `${handle}:${passwordh}:${OTP}`;
     // const salt = `:${passwordh}:${OTP}`;
 
-    return cryptoLib.hash(toash, iterations)
+    return cryptoLib.hash(tohash, iterations)
         .then(refT => Promise.resolve(refT));
 }
 
@@ -137,12 +137,12 @@ export function getLinkR(handle: string, passwordh: string): Promise<string> {
 /**
  * Linking reference from account to account info
  * @param linkR
- * @param refU
+ * @param refI
  * @return BASE64 STRING
  */
-export function getLinkI(linkR: string, refU: string): string {
-    const linkA = cryptoLib.XORBase64Strings(linkR, refU);
-    return linkA;
+export function getLinkI(linkR: string, refI: string): string {
+    const linkI = cryptoLib.XORBase64Strings(linkR, refI);
+    return linkI;
 }
 
 /**

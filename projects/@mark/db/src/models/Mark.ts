@@ -70,9 +70,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         return this.findMany({});
     }
 
-    public postMark(doc: any): Promise<mongo.InsertOneWriteOpResult> {
-        return this.insertOne(doc);
-
-        
+    public postMark(mark: any): Promise<mongo.InsertOneWriteOpResult> {
+        return this.insertOne(mark);
     }
 }

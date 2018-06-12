@@ -1,4 +1,4 @@
-import { resolve } from 'dns';
+// import { resolve } from 'dns';
 
 const AWS = require('aws-sdk');
 
@@ -9,12 +9,9 @@ const {
 } = process.env;
 
 AWS.config = new AWS.Config({
-  // accessKeyId: 'AKIAIGW2US6ROKEN66XQ',
-  // secretAccessKey: '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',
-  // region: 'us-east-1'
-  accessKeyId: 'AKIAIGW2US6ROKEN66XQ',
-  secretAccessKey: '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',
-  region: 'us-east-1'
+  accessKeyId,
+  secretAccessKey,
+  region
 });
 
 const sns = new AWS.SNS({ apiVersion: '2010-03-31' });

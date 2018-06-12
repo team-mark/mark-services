@@ -34,7 +34,7 @@ const collectionMap = {
 export const newObjectId = mongoDb.newObjectId;
 
 export let accountInfo: AccountInfo; // queries.accounts;
-export let accounts: Account; // queries.accounts;
+// export let accounts: Account; // queries.accounts;
 export let tokens: Token; // queries.tokens;
 export let users: User; // queries.users;
 export let marks: Mark; // queries.marks;

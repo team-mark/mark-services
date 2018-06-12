@@ -24,7 +24,6 @@ export class Token extends Model<ITokenDb, ITokenConsumer> {
 
                 const token: ITokenDb = {
                     token: tokenString,
-                    _id: null,
                     refT,
                     linkA
                 };

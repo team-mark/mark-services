@@ -57,7 +57,8 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
 
     let phoneh: string;
     let passh: string;
-    let refA: string;
+    let refU: string;
+    let linkR: string;
 
     return Promise.all([
         cryptoLib.hashPhone(phone),
@@ -84,10 +85,8 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                 return Promise.reject(rest.Response.fromBadRequest('user_registered', 'User already registered'));
             }
 
-            const PAD = authentication.getPAD(handle, passwordh);
             const userId = db.User.mapId(db.newObjectId());
 
-            debug('PAD', PAD);
             debug('userId', userId);
 
             return Promise.all([
@@ -95,29 +94,35 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                 authentication.getRefU(userId, handle, passwordh),
                 authentication.getLinkPK(userId, handle, passwordh)
             ])
-                .then(([linkR, _refA, linkPK]) => {
-                    refA = _refA;
+                .then(([_linkR, _refA, linkPK]) => {
+                    refU = _refA;
+                    linkR = _linkR;
                     debug('linkR', linkR);
-                    debug('refA', refA);
-                    const linkI = authentication.getLinkI(linkR, refA);
-                    return db.users.create(userId, handle, linkR, refA, linkI, linkPK);
+                    debug('refA', refU);
+                    return db.users.create(userId, handle, refU, linkPK);
                 })
                 .then(accountRecord => {
                     const { address: walletAddress } = accountRecord;
 
-                    return authentication.getRefI(refA, walletAddress, passh)
+                    return authentication.getRefI(refU, walletAddress, passh)
                         .then(refI => {
 
+                            const linkI = authentication.getLinkI(linkR, refI);
+                            const modifications = {
+                                linkI
+                            };
+
                             return Promise.all([
+                                db.users.updateById(userId, modifications),
                                 db.accountInfo.create(phoneh, refI),
                                 redisConnect.instance(),
-                                cryptoLib.generateSecureCode(18),
+                                cryptoLib.generateSecureCode(cryptoLib.AUTH_CODE_CHARS, 24, true),
                                 cryptoLib.generateShortCode(6, cryptoLib.Encoding.hex),
                                 cryptoLib.generateShortCode(6, cryptoLib.Encoding.hex),
                                 cryptoLib.generateShortCode(6, cryptoLib.Encoding.hex)
                             ]);
                         })
-                        .then(([accountInfoRecord, redisClient, state, roll1, roll2, code]) => {
+                        .then(([_userRecord, accountInfoRecord, redisClient, state, roll1, roll2, code]) => {
 
                             // state, code to decimal
                             // multiple values
@@ -156,7 +161,7 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
 
                                     return new Promise<rest.Response>((resolve, reject) => {
                                         async.parallel([
-                                            cb =>
+                                            (cb: (error: Error, reply?: any) => any) =>
                                                 redisClient.get(accountInfoKey, (error: Error, reply: string) => {
                                                     if (error) {
                                                         cb(error);
@@ -164,7 +169,7 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                                                         cb(null, reply);
                                                     }
                                                 }),
-                                            cb =>
+                                            (cb: (error: Error, reply?: any) => any) =>
                                                 redisClient.get(accountKey, (error: Error, reply: string) => {
                                                     if (error) {
                                                         cb(error);
@@ -189,7 +194,7 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                                             const signupTimeout = 3 * 60; // 3 * 60 seconds = 3 minutes
 
                                             async.parallel([
-                                                cb =>
+                                                (cb: (error: Error, reply?: any) => any) =>
                                                     redisClient.setex(accountInfoKey, signupTimeout, accountInfoData, (error: Error, reply: string) => {
                                                         if (error) {
                                                             cb(error);
@@ -198,7 +203,7 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                                                         }
                                                     })
                                                 ,
-                                                cb =>
+                                                (cb: (error: Error, reply?: any) => any) =>
                                                     redisClient.setex(accountKey, signupTimeout, accountData, (error: Error, reply: string) => {
                                                         if (error) {
                                                             cb(error);
@@ -217,32 +222,32 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                                                     return reject(rest.Response.fromServerError());
                                                 }
 
-                                                cryptoLib.hash(userId, authentication.DEFAULT_HASH_RATE, handle)
-                                                    .then(pad => {
+                                                // cryptoLib.hash(userId, authentication.DEFAULT_HASH_RATE, handle)
+                                                //     .then(pad => {
+                                                //         const responseBody = {
+                                                //             pad,
+                                                //             roll: roll1,
+                                                //             state,
+                                                //             code
+                                                //         };
+                                                //         resolve(rest.Response.fromSuccess(responseBody));
+                                                //     });
+
+                                                sns.sendCode(phone, code)
+                                                    .then(response => {
+
+                                                        // cryptoLib.hash(userId, authentication.DEFAULT_HASH_RATE, handle)
+                                                        //     .then(pad => {
                                                         const responseBody = {
-                                                            pad,
+                                                            // pad,
                                                             roll: roll1,
                                                             state,
-                                                            code
                                                         };
                                                         resolve(rest.Response.fromSuccess(responseBody));
-                                                    });
+                                                        // });
 
-                                                // sns.sendCode(phone, code)
-                                                //     .then(response => {
-
-                                                //         cryptoLib.hash(accountId, authentication.DEFAULT_HASH_RATE, handle)
-                                                //             .then(pad => {
-                                                //                 const responseBody = {
-                                                //                     pad,
-                                                //                     roll: roll1,
-                                                //                     state,
-                                                //                 };
-                                                //                 resolve(rest.Response.fromSuccess(responseBody));
-                                                //             });
-
-                                                //     })
-                                                //     .catch(reject);
+                                                    })
+                                                    .catch(reject);
                                             });
                                         });
                                     });
@@ -265,7 +270,7 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
 
 function signupValidate(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     // res.send({ username: 'ferrantejake' });
-    const { key, roll: roll1, state, secret: deviceSecret, code } = req.body;
+    const { key, roll: roll1, state, code } = req.body;
 
     // const refT = authentication.getRefT(handle, passwordh, deviceSecret);
 
@@ -277,8 +282,11 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
 
     return new Promise((resolve, reject) => {
 
-        redisConnect.instance()
-            .then(redisClient => {
+        Promise.all([
+            cryptoLib.hashDeviceSecret(key),
+            redisConnect.instance()
+        ])
+            .then(([hashedKey, redisClient]) => {
 
                 redisClient.get(accountInfoKey, (error: Error, reply: string) => {
                     if (error) {
@@ -366,8 +374,8 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
                                 const { userId, handle, passwordh } = accountInfo;
 
                                 Promise.all([
-                                    authentication.getRefT(handle, passwordh, deviceSecret),
-                                    authentication.getLinkQ(handle, passwordh, deviceSecret),
+                                    authentication.getRefT(handle, passwordh, hashedKey),
+                                    authentication.getLinkQ(handle, passwordh, hashedKey),
                                     authentication.getRefU(userId, handle, passwordh)
                                 ])
                                     .then(([refT, linkQ, refU]) => {

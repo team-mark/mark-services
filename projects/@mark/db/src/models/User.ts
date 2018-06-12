@@ -70,9 +70,9 @@
 // }
 
 import { mongoDb, W3 } from '../components';
-import { cryptoLib } from '@mark/utils';
+// import { cryptoLib } from '@mark/utils';
 import Model, { IModelConsumer, IModelDb } from './Model';
-import { authentication } from '../../../utils/lib/index';
+import { authentication } from '@mark/utils';
 const debug = require('debug')('mark:Account');
 
 export interface IUserConsumer extends IModelConsumer {
@@ -87,7 +87,7 @@ export interface IUserDb extends IModelDb {
     refPK: string;
     address: string;
     linkI: string;
-    refA: string;
+    refU: string;
 }
 
 export interface IEthereumAccount {
@@ -117,7 +117,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
         this.users = this.collection;
     }
 
-    public create(userId: string | object, handle: string, linkR: string, refA: string, linkI: string, linkPK: string): Promise<IUserDb> {
+    public create(userId: string | object, handle: string, refU: string,  linkPK: string): Promise<IUserDb> {
 
         const web3 = W3.getInstance();
         const ethWallet: IEthereumAccount = web3.eth.accounts.create();
@@ -139,8 +139,9 @@ export class User extends Model<IUserDb, IUserConsumer> {
             handle,
             refPK,
             address: ethWallet.address,
-            linkI,
-            refA,
+            // linkI,
+            linkI: undefined,
+            refU,
         };
 
         debug('user', user);

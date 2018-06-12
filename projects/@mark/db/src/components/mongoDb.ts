@@ -80,12 +80,17 @@ export class Collection<T> {
         this.collection = getCollection(name);
     }
 
-    protected ensure(doc: { _id?: mongo.ObjectId, createdAt?: Date }) {
+    protected ensure(doc: { _id?: mongo.ObjectId, createdAt?: Date, environment?: string }) {
         if (!(doc as Object).hasOwnProperty('_id')) {
             doc._id = newObjectId();
         }
         if (!(doc as Object).hasOwnProperty('createdAt')) {
             doc.createdAt = new Date();
+        }
+
+        const { ENVIRONMENT } = process.env;
+        if (ENVIRONMENT !== 'production') {
+            doc.environment = 'development';
         }
     }
 
