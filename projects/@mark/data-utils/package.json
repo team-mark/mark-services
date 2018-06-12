@@ -8,9 +8,11 @@
   "author": "Jake Ferrante",
   "license": "MIT",
   "dependencies": {
-    "@types/node": "^8.0.55",
-    "@types/redis": "^2.8.6",
     "debug": "~2.6.9",
     "redis": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^8.0.55",
+    "@types/redis": "^2.8.6"
   }
 }

@@ -10,11 +10,13 @@ export interface IModelDb {
     _id?: mongo.ObjectID;
     environment?: string;
     state?: string;
+    createdAt?: Date;
 }
 
 // Format data to be given to the client
 export interface IModelConsumer {
     id?: string;
+    createdAt?: string;
 }
 
 export default class Model<T extends IModelDb, T1 extends IModelConsumer> extends mongoDb.Collection<T> {

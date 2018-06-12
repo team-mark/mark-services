@@ -1,7 +1,7 @@
 {
     "@mark/utils": { },
-    "@mark/data-utils": {"dependencies": [ "@mark/utils", "@mark/db"] },
-    "@mark/db": { "dependencies": [ "@mark/utils"] },
-    "mark-ai": { },
+    "@mark/data-utils": { "dependencies": [ "@mark/utils", "@mark/db"] },
+    "@mark/db": { "dependencies": [ "@mark/utils", "@mark/data-utils"] },
+    "mark-ai": { "dependencies": [ "@mark/utils", "@mark/data-utils", "@mark/db"] },
     "mark-ms": { "dependencies": [ "@mark/utils", "@mark/data-utils", "@mark/db"] }
 }
