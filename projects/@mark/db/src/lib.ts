@@ -3,7 +3,8 @@ import {
     AccountInfo,
     Mark,
     Token,
-    User
+    User,
+    Like
 } from './models';
 import { mongoDb } from './components';
 // Initializes the database
@@ -18,7 +19,9 @@ export {
     ITokenConsumer,
     ITokenDb,
     IUserConsumer,
-    IUserDb
+    IUserDb,
+    ILikeDb,
+    ILikeConsumer
 } from './models';
 
 const debug = require('debug')('mark:db');
