@@ -7,26 +7,15 @@ import Model, { IModelConsumer, IModelDb } from './Model';
 export interface IMarkConsumer extends IModelConsumer {
     // id: string;
     ethereum_id: string;
-<<<<<<< HEAD
     // createdAt: Date;
     score?: number;
     // likes: number;
     // dislikes: number;
-=======
-    body: string;
-    score: number;
->>>>>>> 870914a38cadce6e06e740cfaea207a4b4087815
 }
 export interface IMarkDb extends IModelDb {
     // id: mongo.ObjectID;
     ethereum_id: string;
-<<<<<<< HEAD
-    // likes: mongo.ObjectID[];
-    // dislikes: mongo.ObjectID[];
-    // time: Date;
-=======
     body: string;
->>>>>>> 870914a38cadce6e06e740cfaea207a4b4087815
 }
 
 const COLLECTION_NAME = 'marks';
