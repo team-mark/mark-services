@@ -7,17 +7,13 @@ import Model, { IModelConsumer, IModelDb } from './Model';
 export interface IMarkConsumer extends IModelConsumer {
     id: string;
     ethereum_id: string;
-    time: Date;
+    body: string;
     score: number;
-    likes: number;
-    dislikes: number;
 }
 export interface IMarkDb extends IModelDb {
     id: mongo.ObjectID;
     ethereum_id: string;
-    likes: mongo.ObjectID[];
-    dislikes: mongo.ObjectID[];
-    time: Date;
+    body: string;
 }
 
 const COLLECTION_NAME = 'marks';
@@ -60,19 +56,17 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     }
 
     public static map(mark: IMarkDb): IMarkConsumer {
-        const numLikes = mark.likes.length;
-        const numDislikes = mark.dislikes.length;
-        const _score = Mark.calculatePopularity(numLikes,
-                                                numLikes + numDislikes,
-                                                mark.time);
+        // const numLikes = mark.likes.length;
+        // const numDislikes = mark.dislikes.length;
+        // const _score = Mark.calculatePopularity(numLikes,
+        //                                        numLikes + numDislikes,
+        //                                        mark.time);
 
         const mapped: IMarkConsumer = {
             id: mark._id.toString(),
             ethereum_id: mark.ethereum_id,
-            likes: mark.likes.length,
-            dislikes: mark.dislikes.length,
-            score: _score,
-            time: mark.time
+            body: mark.body,
+            score: null, // _score,
         };
 
         return mapped;
