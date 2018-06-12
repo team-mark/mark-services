@@ -6,8 +6,17 @@ export interface ResponseReason {
     query: string;
 }
 
+enum ResponseType {
+    Success = 'Success',
+    NotFound = 'NotFound',
+    NotAllowed = 'NotAllowed',
+    BadRequest = 'BadRequest',
+    Unauthorized = 'Unauthorized',
+    ServerError = 'ServerError',
+}
+
 export class Response {
-    public constructor(private status: number, private body?: any) {
+    public constructor(public status: number, private body?: any) {
         return this;
     }
 
@@ -52,6 +61,7 @@ export class Response {
     }
 
     public static fromServerError(code?: string, reason?: string): Response {
+
         code = code || 'server_error';
         reason = reason || 'internal server error';
         const body = { code, details: reason };

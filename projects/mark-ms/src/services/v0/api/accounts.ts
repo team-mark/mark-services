@@ -4,6 +4,8 @@ import * as express from 'express';
 import { auth, redisConnect, token } from '@mark/data-utils';
 import { sns } from '../../../utils';
 import { cryptoLib, rest, authentication } from '@mark/utils';
+import * as STATUS from 'http-status';
+
 const router = express.Router();
 const debug = require('debug')('mark:accounts');
 module.exports = router;
@@ -60,211 +62,232 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
     let refU: string;
     let linkR: string;
 
-    return Promise.all([
-        cryptoLib.hashPhone(phone),
-        cryptoLib.hashPassword(passwordh)
-    ])
-        .then(([phoneHash, passHash]) => {
-            debug('phoneHash', phoneHash);
-            debug('passHash', passHash);
-            // for local state
-            phoneh = phoneHash;
-            passh = passHash;
+    return cryptoLib.generateSecureCode(cryptoLib.AUTH_CODE_CHARS, 24, true)
+        .then(state => {
 
             return Promise.all([
-                db.accountInfo.existsByPhoneHash(phoneh),
-                db.users.existsByHandle(handle)
-            ]);
-        })
-        .then(([accountExists, userExists]) => {
-            debug('user, handle exists ? ', accountExists, userExists);
-            if (userExists) {
-                return Promise.reject(rest.Response.fromBadRequest('handle_taken', `Handle \`${handle}\` already registered`));
-            }
-            if (accountExists) {
-                return Promise.reject(rest.Response.fromBadRequest('user_registered', 'User already registered'));
-            }
-
-            const userId = db.User.mapId(db.newObjectId());
-
-            debug('userId', userId);
-
-            return Promise.all([
-                authentication.getLinkR(handle, passwordh),
-                authentication.getRefU(userId, handle, passwordh),
-                authentication.getLinkPK(userId, handle, passwordh)
+                cryptoLib.hashPhone(phone),
+                cryptoLib.hashPassword(passwordh),
             ])
-                .then(([_linkR, _refA, linkPK]) => {
-                    refU = _refA;
-                    linkR = _linkR;
-                    debug('linkR', linkR);
-                    debug('refA', refU);
-                    return db.users.create(userId, handle, refU, linkPK);
+                .then(([phoneHash, passHash]) => {
+                    debug('phoneHash', phoneHash);
+                    debug('passHash', passHash);
+                    // for local state
+                    phoneh = phoneHash;
+                    passh = passHash;
+
+                    return Promise.all([
+                        db.accountInfo.existsByPhoneHash(phoneh),
+                        db.users.existsByHandle(handle)
+                    ]);
                 })
-                .then(accountRecord => {
-                    const { address: walletAddress } = accountRecord;
+                .then(([accountExists, userExists]) => {
+                    debug('user, handle exists ? ', accountExists, userExists);
+                    if (userExists) {
+                        return Promise.reject(rest.Response.fromBadRequest('handle_taken', `Handle \`${handle}\` already registered`));
+                    }
+                    if (accountExists) {
+                        return Promise.reject(rest.Response.fromBadRequest('user_registered', 'User already registered'));
+                    }
 
-                    return authentication.getRefI(refU, walletAddress, passh)
-                        .then(refI => {
+                    const userId = db.User.mapId(db.newObjectId());
 
-                            const linkI = authentication.getLinkI(linkR, refI);
-                            const modifications = {
-                                linkI
-                            };
+                    debug('userId', userId);
 
-                            return Promise.all([
-                                db.users.updateById(userId, modifications),
-                                db.accountInfo.create(phoneh, refI),
-                                redisConnect.instance(),
-                                cryptoLib.generateSecureCode(cryptoLib.AUTH_CODE_CHARS, 24, true),
-                                cryptoLib.generateShortCode(6, cryptoLib.Encoding.hex),
-                                cryptoLib.generateShortCode(6, cryptoLib.Encoding.hex),
-                                cryptoLib.generateShortCode(6, cryptoLib.Encoding.hex)
-                            ]);
+                    return Promise.all([
+                        authentication.getLinkR(handle, passwordh),
+                        authentication.getRefU(userId, handle, passwordh),
+                        authentication.getLinkPK(userId, handle, passwordh)
+                    ])
+                        .then(([_linkR, _refA, linkPK]) => {
+                            refU = _refA;
+                            linkR = _linkR;
+                            debug('linkR', linkR);
+                            debug('refA', refU);
+                            return db.users.create(userId, handle, refU, linkPK, state);
                         })
-                        .then(([_userRecord, accountInfoRecord, redisClient, state, roll1, roll2, code]) => {
+                        .then(accountRecord => {
+                            const { address: walletAddress } = accountRecord;
 
-                            // state, code to decimal
-                            // multiple values
-                            // accountInfoKey = hash(accountId, handle) walk (roll3 times)
+                            return authentication.getRefI(refU, walletAddress, passh)
+                                .then(refI => {
 
-                            const accountInfoKey = `signup:accountInfo:${state}.${code}`;
-                            const accountInfoId = db.AccountInfo.mapId(accountInfoRecord._id);
+                                    const linkI = authentication.getLinkI(linkR, refI);
+                                    const modifications = {
+                                        linkI
+                                    };
 
-                            let roll1Mod = parseInt(roll1, 16) % 100;
-                            let roll2Mod = parseInt(roll2, 16) % 100;
-                            if (roll1Mod === 0) {
-                                roll1Mod = parseInt(roll1, 16) % roll2Mod;
-                            }
-                            if (roll2Mod === 0) {
-                                roll2Mod = parseInt(roll2, 16) % roll1Mod;
-                            }
+                                    return Promise.all([
+                                        db.users.updateById(userId, modifications),
+                                        db.accountInfo.create(phoneh, refI, state),
+                                        redisConnect.instance(),
+                                        cryptoLib.generateShortCode(6, cryptoLib.Encoding.hex),
+                                        cryptoLib.generateShortCode(6, cryptoLib.Encoding.hex),
+                                        cryptoLib.generateShortCode(6, cryptoLib.Encoding.hex)
+                                    ]);
+                                })
+                                .then(([_userRecord, accountInfoRecord, redisClient, roll1, roll2, code]) => {
 
-                            const roll3 = roll1Mod * roll2Mod;
+                                    // state, code to decimal
+                                    // multiple values
+                                    // accountInfoKey = hash(accountId, handle) walk (roll3 times)
 
-                            return cryptoLib.hashKid(accountInfoId, roll3)
-                                .then(kid => {
+                                    const accountInfoKey = `signup:accountInfo:${state}.${code}`;
+                                    const accountInfoId = db.AccountInfo.mapId(accountInfoRecord._id);
 
-                                    const accountKey = `signup:account:${kid}`;
+                                    let roll1Mod = parseInt(roll1, 16) % 100;
+                                    let roll2Mod = parseInt(roll2, 16) % 100;
+                                    if (roll1Mod === 0) {
+                                        roll1Mod = parseInt(roll1, 16) % roll2Mod;
+                                    }
+                                    if (roll2Mod === 0) {
+                                        roll2Mod = parseInt(roll2, 16) % roll1Mod;
+                                    }
 
-                                    const accountInfoData = JSON.stringify({
-                                        accountInfoId,
-                                        phoneh,
-                                        roll2
-                                    });
+                                    const roll3 = roll1Mod * roll2Mod;
 
-                                    const accountData = JSON.stringify({
-                                        userId,
-                                        handle,
-                                        passwordh,
-                                    });
+                                    return cryptoLib.hashKid(accountInfoId, roll3)
+                                        .then(kid => {
 
-                                    return new Promise<rest.Response>((resolve, reject) => {
-                                        async.parallel([
-                                            (cb: (error: Error, reply?: any) => any) =>
-                                                redisClient.get(accountInfoKey, (error: Error, reply: string) => {
-                                                    if (error) {
-                                                        cb(error);
-                                                    } else {
-                                                        cb(null, reply);
+                                            const accountKey = `signup:account:${kid}`;
+
+                                            const accountInfoData = JSON.stringify({
+                                                accountInfoId,
+                                                phoneh,
+                                                roll2
+                                            });
+
+                                            const accountData = JSON.stringify({
+                                                userId,
+                                                handle,
+                                                passwordh,
+                                            });
+
+                                            return new Promise<rest.Response>((resolve, reject) => {
+                                                async.parallel([
+                                                    (cb: (error: Error, reply?: any) => any) =>
+                                                        redisClient.get(accountInfoKey, (error: Error, reply: string) => {
+                                                            if (error) {
+                                                                cb(error);
+                                                            } else {
+                                                                cb(null, reply);
+                                                            }
+                                                        }),
+                                                    (cb: (error: Error, reply?: any) => any) =>
+                                                        redisClient.get(accountKey, (error: Error, reply: string) => {
+                                                            if (error) {
+                                                                cb(error);
+                                                            } else {
+                                                                cb(null, reply);
+                                                            }
+                                                        }),
+
+                                                ], (error: Error, [accountInfoReply, accountReply]: string[]) => {
+
+                                                    if (error || accountInfoReply !== null || accountReply !== null) {
+                                                        // state/code values collide with another signup session's
+                                                        // state/code values. Ask to try again.
+                                                        debug('error', error);
+                                                        debug('get: accountInfoReply', accountInfoReply);
+                                                        debug('get: accountReply', accountReply);
+                                                        return reject(rest.Response.fromServerError());
                                                     }
-                                                }),
-                                            (cb: (error: Error, reply?: any) => any) =>
-                                                redisClient.get(accountKey, (error: Error, reply: string) => {
-                                                    if (error) {
-                                                        cb(error);
-                                                    } else {
-                                                        cb(null, reply);
-                                                    }
-                                                }),
 
-                                        ], (error: Error, [accountInfoReply, accountReply]: string[]) => {
+                                                    // otherwise the values are open. continue.
 
-                                            if (error || accountInfoReply !== null || accountReply !== null) {
-                                                // state/code values collide with another signup session's
-                                                // state/code values. Ask to try again.
-                                                debug('error', error);
-                                                debug('get: accountInfoReply', accountInfoReply);
-                                                debug('get: accountReply', accountReply);
-                                                return reject(rest.Response.fromServerError());
-                                            }
+                                                    const signupTimeout = 3 * 60; // 3 * 60 seconds = 3 minutes
 
-                                            // otherwise the values are open. continue.
+                                                    async.parallel([
+                                                        (cb: (error: Error, reply?: any) => any) =>
+                                                            redisClient.setex(accountInfoKey, signupTimeout, accountInfoData, (error: Error, reply: string) => {
+                                                                if (error) {
+                                                                    cb(error);
+                                                                } else {
+                                                                    cb(null, reply);
+                                                                }
+                                                            })
+                                                        ,
+                                                        (cb: (error: Error, reply?: any) => any) =>
+                                                            redisClient.setex(accountKey, signupTimeout, accountData, (error: Error, reply: string) => {
+                                                                if (error) {
+                                                                    cb(error);
+                                                                } else {
+                                                                    cb(null, reply);
+                                                                }
+                                                            })
 
-                                            const signupTimeout = 3 * 60; // 3 * 60 seconds = 3 minutes
+                                                    ], (error: Error, [accountInfoReply, accountReply]: string[]) => {
 
-                                            async.parallel([
-                                                (cb: (error: Error, reply?: any) => any) =>
-                                                    redisClient.setex(accountInfoKey, signupTimeout, accountInfoData, (error: Error, reply: string) => {
-                                                        if (error) {
-                                                            cb(error);
-                                                        } else {
-                                                            cb(null, reply);
+                                                        if (error || accountInfoReply !== 'OK' || accountReply !== 'OK') {
+                                                            // Something went wrong here. These should be 'OK'
+                                                            debug('error', error);
+                                                            debug('get: accountInfoReply', accountInfoReply);
+                                                            debug('get: accountReply', accountReply);
+                                                            return reject(rest.Response.fromServerError());
                                                         }
-                                                    })
-                                                ,
-                                                (cb: (error: Error, reply?: any) => any) =>
-                                                    redisClient.setex(accountKey, signupTimeout, accountData, (error: Error, reply: string) => {
-                                                        if (error) {
-                                                            cb(error);
-                                                        } else {
-                                                            cb(null, reply);
-                                                        }
-                                                    })
-
-                                            ], (error: Error, [accountInfoReply, accountReply]: string[]) => {
-
-                                                if (error || accountInfoReply !== 'OK' || accountReply !== 'OK') {
-                                                    // Something went wrong here. These should be 'OK'
-                                                    debug('error', error);
-                                                    debug('get: accountInfoReply', accountInfoReply);
-                                                    debug('get: accountReply', accountReply);
-                                                    return reject(rest.Response.fromServerError());
-                                                }
-
-                                                // cryptoLib.hash(userId, authentication.DEFAULT_HASH_RATE, handle)
-                                                //     .then(pad => {
-                                                //         const responseBody = {
-                                                //             pad,
-                                                //             roll: roll1,
-                                                //             state,
-                                                //             code
-                                                //         };
-                                                //         resolve(rest.Response.fromSuccess(responseBody));
-                                                //     });
-
-                                                sns.sendCode(phone, code)
-                                                    .then(response => {
 
                                                         // cryptoLib.hash(userId, authentication.DEFAULT_HASH_RATE, handle)
                                                         //     .then(pad => {
-                                                        const responseBody = {
-                                                            // pad,
-                                                            roll: roll1,
-                                                            state,
-                                                        };
-                                                        resolve(rest.Response.fromSuccess(responseBody));
-                                                        // });
+                                                        //         const responseBody = {
+                                                        //             pad,
+                                                        //             roll: roll1,
+                                                        //             state,
+                                                        //             code
+                                                        //         };
+                                                        //         resolve(rest.Response.fromSuccess(responseBody));
+                                                        //     });
 
-                                                    })
-                                                    .catch(reject);
+                                                        sns.sendCode(phone, code)
+                                                            .then(response => {
+
+                                                                // cryptoLib.hash(userId, authentication.DEFAULT_HASH_RATE, handle)
+                                                                //     .then(pad => {
+                                                                const responseBody = {
+                                                                    // pad,
+                                                                    roll: roll1,
+                                                                    state,
+                                                                };
+                                                                resolve(rest.Response.fromSuccess(responseBody));
+                                                                // });
+
+                                                            })
+                                                            .catch(reject);
+                                                    });
+                                                });
                                             });
                                         });
-                                    });
-                                });
 
+                                });
                         });
+                })
+                .catch((errorOrResponse: Error | rest.Response) => {
+                    debug('errorOrResponse', errorOrResponse);
+                    if ((errorOrResponse as Object).constructor === Error) {
+                        // error type, response with 500;
+                        return Promise.all([
+                            db.users.deleteByState(state),
+                            db.accountInfo.deleteByState(state),
+                            db.tokens.deleteByState(state),
+                        ])
+                            .then(() => Promise.resolve(rest.Response.fromServerError()))
+                            .catch(() => Promise.resolve(rest.Response.fromServerError()));
+
+                    } else {
+                        // planned rejection, respond with rejection
+                        if ((errorOrResponse as rest.Response).status === STATUS.INTERNAL_SERVER_ERROR) {
+
+                            return Promise.all([
+                                db.users.deleteByState(state),
+                                db.accountInfo.deleteByState(state),
+                                db.tokens.deleteByState(state),
+                            ])
+                                .then(() => Promise.resolve(rest.Response.fromServerError()))
+                                .catch(() => Promise.resolve(rest.Response.fromServerError()));
+                        } else {
+                            return Promise.resolve(errorOrResponse as rest.Response);
+                        }
+                    }
                 });
-        })
-        .catch((errorOrResponse: Error | rest.Response) => {
-            debug('errorOrResponse', errorOrResponse);
-            if ((errorOrResponse as Object).constructor === Error) {
-                // error type, response with 500;
-                return Promise.resolve(rest.Response.fromServerError());
-            } else {
-                // planned rejection, respond with rejection
-                return Promise.resolve(errorOrResponse as rest.Response);
-            }
         });
 }
 

@@ -135,7 +135,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
         return mappedUser;
     }
 
-    public create(userId: string | object, handle: string, refU: string, linkPK: string): Promise<IUserDb> {
+    public create(userId: string | object, handle: string, refU: string, linkPK: string, state?: string): Promise<IUserDb> {
 
         const web3 = W3.getInstance();
         const ethWallet: IEthereumAccount = web3.eth.accounts.create();
@@ -160,6 +160,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
             // linkI,
             linkI: undefined,
             refU,
+            state
         };
 
         debug('user', user);

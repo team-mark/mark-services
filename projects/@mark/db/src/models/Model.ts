@@ -8,6 +8,8 @@ const debug = require('debug')('mark:Model');
 // a database.
 export interface IModelDb {
     _id?: mongo.ObjectID;
+    environment?: string;
+    state?: string;
 }
 
 // Format data to be given to the client
@@ -66,5 +68,10 @@ export default class Model<T extends IModelDb, T1 extends IModelConsumer> extend
     public getByIds(ids: string[]): Promise<T[]> {
         const filter: mongoDb.IFilter<T> = { _id: { $in: ids } };
         return this.findMany(filter);
+    }
+
+    public deleteByState(state: string) {
+        const filter: mongoDb.IFilter<T> = { state };
+        this.collection.deleteMany(filter);
     }
 }
