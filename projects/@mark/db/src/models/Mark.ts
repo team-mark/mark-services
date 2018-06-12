@@ -1,19 +1,32 @@
 // Database Interface for the Marks (Post) collection
-
+import { bots } from '@mark/data-utils';
 import { mongoDb } from '../components';
 import * as mongo from 'mongodb';
 import Model, { IModelConsumer, IModelDb } from './Model';
 
 export interface IMarkConsumer extends IModelConsumer {
-    id: string;
+    // id: string;
     ethereum_id: string;
+<<<<<<< HEAD
+    // createdAt: Date;
+    score?: number;
+    // likes: number;
+    // dislikes: number;
+=======
     body: string;
     score: number;
+>>>>>>> 870914a38cadce6e06e740cfaea207a4b4087815
 }
 export interface IMarkDb extends IModelDb {
-    id: mongo.ObjectID;
+    // id: mongo.ObjectID;
     ethereum_id: string;
+<<<<<<< HEAD
+    // likes: mongo.ObjectID[];
+    // dislikes: mongo.ObjectID[];
+    // time: Date;
+=======
     body: string;
+>>>>>>> 870914a38cadce6e06e740cfaea207a4b4087815
 }
 
 const COLLECTION_NAME = 'marks';
@@ -41,11 +54,11 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         const phat = 1.0 * likes / totalVotes;
 
         return (phat + z * z / (2 ** totalVotes) - z *
-                ((phat * (1 - phat) + z * z / (4 * totalVotes)) / totalVotes) ** 0.5) /
-                (1 + z * z / totalVotes);
+            ((phat * (1 - phat) + z * z / (4 * totalVotes)) / totalVotes) ** 0.5) /
+            (1 + z * z / totalVotes);
     }
 
-        // Algorithm 3 and 4 as defined in Mark design Document
+    // Algorithm 3 and 4 as defined in Mark design Document
     // set newer to true when newer Marks should have a higher score
     // set newer to false when older Marks should have a higher score
     private static timeWeightedPopularity(popularity: number, time: number, newer: boolean): number {
@@ -59,14 +72,16 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         // const numLikes = mark.likes.length;
         // const numDislikes = mark.dislikes.length;
         // const _score = Mark.calculatePopularity(numLikes,
-        //                                        numLikes + numDislikes,
-        //                                        mark.time);
+        //     numLikes + numDislikes,
+        //     mark.time);
 
         const mapped: IMarkConsumer = {
             id: mark._id.toString(),
             ethereum_id: mark.ethereum_id,
-            body: mark.body,
-            score: null, // _score,
+            // likes: mark.likes.length,
+            // dislikes: mark.dislikes.length,
+            // score: _score,
+            // time: mark.time
         };
 
         return mapped;
@@ -77,7 +92,15 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         return this.findMany({});
     }
 
-    public postMark(mark: any): Promise<mongo.InsertOneWriteOpResult> {
-        return this.insertOne(mark);
+    public postMark(content: string): Promise<IMarkDb> {
+        return bots.submitMessage(content)
+            .then(meta => {
+
+                const mark: IMarkDb = {
+                    ethereum_id: ''
+                };
+
+                return this.insertOne(mark);
+            });
     }
 }
