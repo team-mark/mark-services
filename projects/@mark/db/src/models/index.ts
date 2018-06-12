@@ -3,3 +3,4 @@ export * from './AccountInfo';
 export * from './Token';
 // export * from './User';
 export * from './Mark';
+export * from './Like';
