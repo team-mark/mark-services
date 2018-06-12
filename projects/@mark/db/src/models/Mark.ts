@@ -86,7 +86,8 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             .then(meta => {
 
                 const mark: IMarkDb = {
-                    ethereum_id: ''
+                    ethereum_id: '',
+                    body: content
                 };
 
                 return this.insertOne(mark);

@@ -24,13 +24,14 @@ function markFetch(req: express.Request, res: express.Response, next: express.Ne
 function markPost(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     // add in input checks
     // add in etheruem insert
-    const { title, body } = req.body;
-    const likes: string[] = [];
-    const dislikes: string[] = [];
-    const document = { title, body, dislikes, likes };
-    return db.marks.postMark(document)
+    const {body} = req.body;
+    // const { title, body } = req.body;
+    // const likes: string[] = [];
+    // const dislikes: string[] = [];
+    // const document = { title, body, dislikes, likes };
+    return db.marks.postMark(body)
         .then(result => {
-            if (result.result)
+            if (result)
                 return Promise.resolve(rest.Response.fromSuccess());
             else
                 return Promise.resolve(rest.Response.fromServerError());
