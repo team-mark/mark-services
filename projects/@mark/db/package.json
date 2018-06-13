@@ -8,9 +8,11 @@
   "author": "Jake Ferrante",
   "license": "MIT",
   "dependencies": {
+    "@types/ipfs": "git+https://github.com/survirtual/types-ipfs.git",
     "@types/mongodb": "^3.0.15",
     "@types/node": "^8.0.55",
     "debug": "~2.6.9",
+    "ipfs-api": "^22.0.1",
     "mongodb": "^3.0.7"
   }
 }
