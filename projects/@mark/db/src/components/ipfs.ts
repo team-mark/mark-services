@@ -31,7 +31,6 @@ export function getIpfsPost(hash: string): Promise<IpfsPost> {
 export function getManyIpfsPosts(hashes: string[]): Promise<IpfsPost[]> {
     const promises: Promise<IpfsPost>[] = [];
     hashes.forEach((value, index) => {
-        console.log(value);
         promises.push(getIpfsPost(value));
     });
     return Promise.all(promises);

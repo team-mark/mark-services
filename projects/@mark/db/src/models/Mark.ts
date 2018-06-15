@@ -9,7 +9,7 @@ import { addIpfsPost, getManyIpfsPosts } from '../components/ipfs';
 export interface IMarkConsumer extends IModelConsumer {
     // id: string;
     ethereum_id: string;
-    // createdAt: Date;
+    author: string;
     body: string;
     score?: number;
     // likes: number;
@@ -19,6 +19,7 @@ export interface IMarkDb extends IModelDb {
     // id: mongo.ObjectID;
     ethereum_id: string;
     body: string;
+    author: string;
 }
 
 const COLLECTION_NAME = 'marks';
@@ -66,6 +67,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             id: mark._id.toString(),
             ethereum_id: mark.ethereum_id,
             body: mark.body,
+            author: mark.author,
         };
 
         return mapped;
@@ -86,8 +88,10 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                 });
                 return getManyIpfsPosts(hashes)
                     .then(ipfs_posts => {
-                        for (let i = 0; i < ipfs_posts.length; i++)
+                        for (let i = 0; i < ipfs_posts.length; i++) {
                             post_mdb[i].body = ipfs_posts[i].content;
+                            post_mdb[i].author = ipfs_posts[i].author;
+                        }
 
                         return Promise.resolve(post_mdb);
                     });
@@ -95,13 +99,14 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     }
 
     public postMark(content: string): Promise<IMarkDb> {
-        const post = new IpfsPost('TEST', new Date(), content);
+        const post = new IpfsPost('An author', new Date(), content);
         // TODO: Add in bots.submitMessage
         return addIpfsPost(post)
             .then(hash => {
                 const mark: IMarkDb = {
                     ethereum_id: hash,
-                    body: content
+                    body: content,
+                    author: 'an author'
                 };
                 return this.insertOne(mark);
             });
