@@ -16,7 +16,7 @@ export function addIpfsPost(post: IpfsPost): Promise<Multihash> {
 }
 
 // Returns the post with the given ipfs hash.
-export function getIpfsPost(hash: Multihash): Promise<IpfsPost> {
+export function getIpfsPost(hash: string): Promise<IpfsPost> {
 
     return ipfsClient.files.cat(hash)
         .then((file: Buffer, err: Error) => {
@@ -26,6 +26,15 @@ export function getIpfsPost(hash: Multihash): Promise<IpfsPost> {
 
             return Promise.resolve(post);
         });
+}
+
+export function getManyIpfsPosts(hashes: string[]): Promise<IpfsPost[]> {
+    const promises: Promise<IpfsPost>[] = [];
+    hashes.forEach((value, index) => {
+        console.log(value);
+        promises.push(getIpfsPost(value));
+    });
+    return Promise.all(promises);
 }
 
 // Returns whether or not the hash was successfully pinned.

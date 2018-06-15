@@ -3,11 +3,14 @@ import { bots } from '@mark/data-utils';
 import { mongoDb } from '../components';
 import * as mongo from 'mongodb';
 import Model, { IModelConsumer, IModelDb } from './Model';
+import { IpfsPost } from './IpfsPost';
+import { addIpfsPost, getManyIpfsPosts } from '../components/ipfs';
 
 export interface IMarkConsumer extends IModelConsumer {
     // id: string;
     ethereum_id: string;
     // createdAt: Date;
+    body: string;
     score?: number;
     // likes: number;
     // dislikes: number;
@@ -58,38 +61,48 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     }
 
     public static map(mark: IMarkDb): IMarkConsumer {
-        // const numLikes = mark.likes.length;
-        // const numDislikes = mark.dislikes.length;
-        // const _score = Mark.calculatePopularity(numLikes,
-        //     numLikes + numDislikes,
-        //     mark.time);
 
         const mapped: IMarkConsumer = {
             id: mark._id.toString(),
             ethereum_id: mark.ethereum_id,
-            // likes: mark.likes.length,
-            // dislikes: mark.dislikes.length,
-            // score: _score,
-            // time: mark.time
+            body: mark.body,
         };
 
         return mapped;
     }
 
-    public retrieveMarks(): Promise<IMarkDb[]> {
+    /*public retrieveMarks(): Promise<IMarkDb[]> {
         const filter: mongoDb.IFilter<IMarkDb> = {};
         return this.findMany({});
+    }*/
+
+    public retrieveMarks(): Promise<IMarkDb[]> {
+        const filter: mongoDb.IFilter<IMarkDb> = {};
+        return this.findMany({})
+            .then(post_mdb => {
+                const hashes: string[] = [];
+                post_mdb.forEach((mark_mdb, index) => {
+                    hashes.push(mark_mdb.ethereum_id);
+                });
+                return getManyIpfsPosts(hashes)
+                    .then(ipfs_posts => {
+                        for (let i = 0; i < ipfs_posts.length; i++)
+                            post_mdb[i].body = ipfs_posts[i].content;
+
+                        return Promise.resolve(post_mdb);
+                    });
+            });
     }
 
     public postMark(content: string): Promise<IMarkDb> {
-        return bots.submitMessage(content)
-            .then(meta => {
-
+        const post = new IpfsPost('TEST', new Date(), content);
+        // TODO: Add in bots.submitMessage
+        return addIpfsPost(post)
+            .then(hash => {
                 const mark: IMarkDb = {
-                    ethereum_id: '',
+                    ethereum_id: hash,
                     body: content
                 };
-
                 return this.insertOne(mark);
             });
     }
