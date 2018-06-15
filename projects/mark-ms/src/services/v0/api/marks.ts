@@ -15,9 +15,8 @@ router.get('/', verify, respond(markFetch));
 router.post('/', verify, respond(markPost));
 
 function markFetch(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    return db.marks.retrieveMarks().then(_marks => {
-        const consumer = _marks.map(db.Mark.map);
-        return Promise.resolve(rest.Response.fromSuccess(consumer));
+    return db.marks.retrieveMarks().then(marks => {
+        return Promise.resolve(rest.Response.fromSuccess(marks));
     });
 }
 

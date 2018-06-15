@@ -18,8 +18,6 @@ export interface IMarkConsumer extends IModelConsumer {
 export interface IMarkDb extends IModelDb {
     // id: mongo.ObjectID;
     ethereum_id: string;
-    body: string;
-    author: string;
 }
 
 const COLLECTION_NAME = 'marks';
@@ -66,34 +64,30 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         const mapped: IMarkConsumer = {
             id: mark._id.toString(),
             ethereum_id: mark.ethereum_id,
-            body: mark.body,
-            author: mark.author,
+            body: null,
+            author: null,
         };
 
         return mapped;
     }
 
-    /*public retrieveMarks(): Promise<IMarkDb[]> {
+    public retrieveMarks(): Promise<IMarkConsumer[]> {
         const filter: mongoDb.IFilter<IMarkDb> = {};
-        return this.findMany({});
-    }*/
-
-    public retrieveMarks(): Promise<IMarkDb[]> {
-        const filter: mongoDb.IFilter<IMarkDb> = {};
+        const consumer: IMarkConsumer[] = [];
         return this.findMany({})
             .then(post_mdb => {
                 const hashes: string[] = [];
                 post_mdb.forEach((mark_mdb, index) => {
                     hashes.push(mark_mdb.ethereum_id);
+                    consumer.push(Mark.map(mark_mdb));
                 });
                 return getManyIpfsPosts(hashes)
                     .then(ipfs_posts => {
                         for (let i = 0; i < ipfs_posts.length; i++) {
-                            post_mdb[i].body = ipfs_posts[i].content;
-                            post_mdb[i].author = ipfs_posts[i].author;
+                            consumer[i].body = ipfs_posts[i].content;
+                            consumer[i].author = ipfs_posts[i].author;
                         }
-
-                        return Promise.resolve(post_mdb);
+                        return Promise.resolve(consumer);
                     });
             });
     }
@@ -104,9 +98,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         return addIpfsPost(post)
             .then(hash => {
                 const mark: IMarkDb = {
-                    ethereum_id: hash,
-                    body: content,
-                    author: 'an author'
+                    ethereum_id: hash
                 };
                 return this.insertOne(mark);
             });
