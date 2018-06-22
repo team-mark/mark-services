@@ -1,6 +1,7 @@
 import { spam } from '../../components';
 import { backbone, redisConnect } from '@mark/data-utils';
-const debug = require('debug')('mark');
+const debug = require('debug')('mark:spam-worker');
+const debugV = require('debug')('mark-sys:spam-worker');
 import * as redis from 'redis';
 // import { redisConnect } from '../../../../@mark/data-utils';
 
@@ -11,6 +12,7 @@ let _pub: redis.RedisClient;
 
 export function init(): Promise<void> {
     return new Promise((resolve, reject) => {
+        debugV('spam-worker init');
 
         let subPromise = Promise.resolve(_sub);
         let pubPromise = Promise.resolve(_pub);
@@ -33,16 +35,16 @@ export function init(): Promise<void> {
                 _sub = sub;
 
                 sub.on('subscribe', (channel: string, message: number) => {
-                    debug('spam-worker ready');
+                    debugV('spam-worker ready');
                     resolve();
                 });
 
                 sub.on('pmessage', (pattern: string, channel: string, message: string) => {
-
+                    debugV('spam-worker ready');
                     const [_spam, _message, _announce, id] = channel.split('-');
 
-                    spam.passToAI(id, message)
-                        
+                    spam.passToAI(id, message);
+
                 });
             });
     });
