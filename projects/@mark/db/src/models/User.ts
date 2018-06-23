@@ -82,12 +82,17 @@ export interface IUserConsumer extends IModelConsumer {
     // link_a: string;
     // ref_a: string;
 }
+
+// update over in @mark/utils/rest if changes made here
 export interface IUserDb extends IModelDb {
     handle: string;
     refPK: string;
     address: string;
     linkI: string;
     refU: string;
+    followers: string[]; // list of handles
+    following: string[]; // list of handles
+    profilePicture: string;
 }
 
 export interface IEthereumAccount {
@@ -138,7 +143,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public create(userId: string | object, handle: string, refU: string, linkPK: string, state?: string): Promise<IUserDb> {
 
         const web3 = W3.getInstance();
-        const ethWallet: IEthereumAccount = web3.eth.accounts.create();
+        const ethWallet: IEthereumAccount = web3.eth.users.create();
 
         // {
         //     address: '0x8f56Abb01CB4FF518099133F3612A306ba6d6dF9',
@@ -160,7 +165,9 @@ export class User extends Model<IUserDb, IUserConsumer> {
             // linkI,
             linkI: undefined,
             refU,
-            state
+            state,
+            followers: [],
+            following: []
         };
 
         debug('user', user);
@@ -222,5 +229,66 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public existsByHandle(handle: string) {
         const filter: mongoDb.IFilter<Partial<IUserDb>> = { handle };
         return this.exists(filter);
+    }
+
+    public getByHandle(handle: string) {
+        const filter: mongoDb.IFilter<IUserDb> = { handle };
+        return this.users.findOne<IUserDb>(filter);
+    }
+
+    public getManyByHandle(handles: string[]) {
+        const filter: mongoDb.IFilter<IUserDb> = { handle: { $in: handles } };
+        return this.users.find(filter);
+    }
+
+    public updateByHandle(handle: string, modifications: any) {
+        const filter: mongoDb.IFilter<IUserDb> = { handle };
+        return this.users.updateOne<IUserDb>(filter, modifications);
+    }
+
+    public getFollowers(handle: string) {
+        return this.getByHandle(handle)
+            .then(account => Promise.resolve(account.followers));
+    }
+
+    public getFollowing(handle: string) {
+        return this.getByHandle(handle)
+            .then(account => Promise.resolve(account.following));
+    }
+
+    public addFollower(followerHandle: string, targetHandle: string) {
+        return this.getByHandle(handle)
+            .then(account => {
+                if (!account) {
+                    return Promise.reject(new Error(`User with handle '${handle}' does not exist.`));
+                } else {
+                    const { followers } = account;
+                    const modifications = {
+                        followers: followers.concat(followerHandle)
+                    };
+                    return this.updateByHandle(handle, modifications);
+                }
+            });
+    }
+
+    public removeFollower(followerHandle: string, targetHandle: string) {
+        return this.getByHandle(handle)
+            .then(account => {
+                if (!account) {
+                    return Promise.reject(new Error(`User with handle '${handle}' does not exist.`));
+                } else {
+                    const { followers } = account;
+                    const modifications = {
+                        // filters specified follower handle (does not apply filter where f is not followerHandle)
+                        followers: followers.filter(f => f !== followerHandle)
+                    };
+                    return this.updateByHandle(handle, modifications);
+                }
+            });
+    }
+
+    public updateProfilePicture(handle: string, url: string) {
+        const modifications: Partial<IUserDb> = { profilePicture: url };
+        return this.updateByHandle(handle, modifications);
     }
 }

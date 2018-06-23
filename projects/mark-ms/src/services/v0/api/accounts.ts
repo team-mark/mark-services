@@ -2,9 +2,13 @@ import * as async from 'async';
 import * as db from '@mark/db';
 import * as express from 'express';
 import { auth, redisConnect, token } from '@mark/data-utils';
-import { sns } from '../../../utils';
-import { cryptoLib, rest, authentication } from '@mark/utils';
+import { sns, s3 } from '../../../utils';
+import { authentication, cryptoLib, rest } from '@mark/utils';
 import * as STATUS from 'http-status';
+import * as multer from 'multer';
+
+const UPLOAD_PATH = 'uploads';
+const upload = multer({ dest: `${UPLOAD_PATH}/` }); // multer configuration
 
 const router = express.Router();
 const debug = require('debug')('mark:accounts');
@@ -18,14 +22,17 @@ const respond = rest.promiseResponseMiddlewareWrapper(debug);
 router.route('/login')
     .post(authBasic, verify, respond(login))
     .all(notAllowed);
+router.route('/check-handle-availability')
+    .post(authAnon, verify, respond(checkHandleAvailability))
+    .all(notAllowed);
 router.route('/signup')
     .post(authAnon, verify, respond(signup))
     .all(notAllowed);
 router.route('/signup-validate')
     .post(authAnon, verify, respond(signupValidate))
     .all(notAllowed);
-router.route('/check-handle-availability')
-    .post(authAnon, verify, respond(checkHandleAvailability))
+router.route('/update-profile-picture')
+    .post(authBasic, verify, upload.single('profile-picture'), respond(uploadProfilePicture))
     .all(notAllowed);
 
 // Route definitions
@@ -190,7 +197,7 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                                                         debug('error', error);
                                                         debug('get: accountInfoReply', accountInfoReply);
                                                         debug('get: accountReply', accountReply);
-                                                        return reject(rest.Response.fromServerError());
+                                                        return reject(rest.Response.fromUnknownError());
                                                     }
 
                                                     // otherwise the values are open. continue.
@@ -223,7 +230,7 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                                                             debug('error', error);
                                                             debug('get: accountInfoReply', accountInfoReply);
                                                             debug('get: accountReply', accountReply);
-                                                            return reject(rest.Response.fromServerError());
+                                                            return reject(rest.Response.fromUnknownError());
                                                         }
 
                                                         // cryptoLib.hash(userId, authentication.DEFAULT_HASH_RATE, handle)
@@ -269,8 +276,8 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                             db.accountInfo.deleteByState(state),
                             db.tokens.deleteByState(state),
                         ])
-                            .then(() => Promise.resolve(rest.Response.fromServerError()))
-                            .catch(() => Promise.resolve(rest.Response.fromServerError()));
+                            .then(() => Promise.resolve(rest.Response.fromUnknownError()))
+                            .catch(() => Promise.resolve(rest.Response.fromUnknownError()));
 
                     } else {
                         // planned rejection, respond with rejection
@@ -281,8 +288,8 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                                 db.accountInfo.deleteByState(state),
                                 db.tokens.deleteByState(state),
                             ])
-                                .then(() => Promise.resolve(rest.Response.fromServerError()))
-                                .catch(() => Promise.resolve(rest.Response.fromServerError()));
+                                .then(() => Promise.resolve(rest.Response.fromUnknownError()))
+                                .catch(() => Promise.resolve(rest.Response.fromUnknownError()));
                         } else {
                             return Promise.resolve(errorOrResponse as rest.Response);
                         }
@@ -313,7 +320,7 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
 
                 redisClient.get(accountInfoKey, (error: Error, reply: string) => {
                     if (error) {
-                        return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+                        return resolve(rest.Response.fromUnknownError('internal_error', 'unable to service request'));
                     }
                     if (!reply) {
                         return resolve(rest.Response.fromBadRequest('invalid_session', 'could not identify signup session'));
@@ -324,7 +331,7 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
                         accountInfo = JSON.parse(reply);
                     } catch (e) {
                         debug(e);
-                        return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+                        return resolve(rest.Response.fromUnknownError('internal_error', 'unable to service request'));
                     }
 
                     let roll1Mod = parseInt(roll1, 16) % 100;
@@ -379,7 +386,7 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
                             redisClient.get(accountKey, (error: Error, reply: string) => {
                                 if (error) {
                                     debug(error);
-                                    return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+                                    return resolve(rest.Response.fromUnknownError('internal_error', 'unable to service request'));
                                 }
                                 if (!reply) {
                                     return resolve(rest.Response.fromBadRequest('invalid_session', 'could not identify signup session'));
@@ -392,7 +399,7 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
                                     accountInfo = JSON.parse(reply);
                                 } catch (e) {
                                     debug(e);
-                                    return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+                                    return resolve(rest.Response.fromUnknownError('internal_error', 'unable to service request'));
                                 }
                                 const { userId, handle, passwordh } = accountInfo;
 
@@ -404,7 +411,7 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
                                     .then(([refT, linkQ, refU]) => {
                                         const linkA = authentication.getLinkA(linkQ, refU);
 
-                                        db.tokens.whitelist(refT, linkA)
+                                        db.tokens.whitelist(refT, linkA, handle)
                                             .then(authToken => {
 
                                                 resolve(rest.Response.fromSuccess({ token: authToken.token }));
@@ -435,4 +442,26 @@ function checkHandleAvailability(req: express.Request, res: express.Response, ne
                 return rest.Response.fromNotFound();
             }
         });
+}
+
+export type MulterFile = {
+    fieldname: string;
+    originalname: string;
+    encoding: string;
+    mimetype: string;
+    size: number;
+    destination: string;
+    filename: string;
+    path: string;
+    buffer: Buffer;
+};
+
+function uploadProfilePicture(req: express.Request & { file: s3.MulterFile, user: db.IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+    const { file, user } = req;
+    const { handle } = user;
+
+    return s3.uploadFile(file)
+        .then(fileUrl => db.users.updateProfilePicture(handle, fileUrl)
+            .then(() => rest.Response.fromSuccess({ url: fileUrl }))
+        );
 }

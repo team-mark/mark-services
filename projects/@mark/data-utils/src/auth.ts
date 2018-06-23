@@ -2,7 +2,7 @@ import * as db from '@mark/db';
 import { rest } from '@mark/utils';
 import * as express from 'express';
 
-export function authBasic(req: express.Request, res: express.Response, next: express.NextFunction): void {
+export function authBasic(req: express.Request & { user?: db.IUserDb }, res: express.Response, next: express.NextFunction): void {
     const token = req.header('Authorization');
     if (!token) {
         return rest.Response.fromUnauthorized().send(res);
@@ -10,10 +10,15 @@ export function authBasic(req: express.Request, res: express.Response, next: exp
 
     db.tokens.getById(token)
         .then(tokenRecord => {
-            if (!token) {
+            if (!tokenRecord) {
                 return rest.Response.fromUnauthorized().send(res);
             } else {
-                next();
+                const { owner } = tokenRecord;
+                db.users.getByHandle(owner)
+                    .then(userRecord => {
+                        req.user = userRecord;
+                        next();
+                    });
             }
         });
 }
