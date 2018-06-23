@@ -32,4 +32,13 @@ export class Token extends Model<ITokenDb, ITokenConsumer> {
                 return this.insertOne(token);
             });
     }
+
+    public getById(id: string) {
+        return this.getByToken(id);
+    }
+
+    public getByToken(token: string) {
+        const filter = { token };
+        return this.findOne(filter);
+    }
 }

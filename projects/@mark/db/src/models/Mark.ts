@@ -91,7 +91,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     //         });
     // }
     public retrieveMarks(): Promise<IMarkDb[]> {
-
+        return Promise.resolve(null);
     }
 
     public postMark(content: string): Promise<IMarkDb> {

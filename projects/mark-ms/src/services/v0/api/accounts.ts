@@ -6,6 +6,7 @@ import { sns, s3 } from '../../../utils';
 import { authentication, cryptoLib, rest } from '@mark/utils';
 import * as STATUS from 'http-status';
 import * as multer from 'multer';
+import { IUserDb } from '@mark/db';
 
 const UPLOAD_PATH = 'uploads';
 const upload = multer({ dest: `${UPLOAD_PATH}/` }); // multer configuration
@@ -19,6 +20,9 @@ const { verify } = rest;
 const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
 // Routes
+router.route('/info')
+    .get(authBasic, verify, respond(info))
+    .all(notAllowed);
 router.route('/login')
     .post(authBasic, verify, respond(login))
     .all(notAllowed);
@@ -47,6 +51,10 @@ function login(req: express.Request, res: express.Response, next: express.NextFu
  * @param next
  * references: https://en.wikipedia.org/wiki/PBKDF2
  */
+function info(req: express.Request & { user: IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+    const { user } = req;
+    return Promise.resolve(rest.Response.fromSuccess(db.User.map(user)));
+}
 function signup(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     debug('signup', req.query);
     // 1.   Get hashes of items
