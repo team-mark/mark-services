@@ -21,13 +21,6 @@ router.route('/:handle')
 // router.route('/:handle/marks/:id')
 //     .get(authBasic, verify, respond(getAccount))
 //     .all(rest.notAllowed);
-router.route('/:handle/followers')
-    .get(authBasic, verify, respond(listFollowers))
-    .put(authBasic, verify, respond(addFollower))
-    .all(rest.notAllowed);
-router.route('/:handle/followers/:handle')
-    .delete(authBasic, verify, respond(removeFollower))
-    .all(rest.notAllowed);
 
 // Route definitions
 function getAccount(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
@@ -41,32 +34,4 @@ function getAccount(req: express.Request, res: express.Response, next: express.N
                 return Promise.resolve(rest.Response.fromNotFound({ handle }));
             }
         });
-}
-
-function listFollowers(req: express.Request & { user: db.IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    const { user } = req;
-
-    return db.users.getFollowers(user.handle)
-        .then(followers => {
-            // const followers = {};
-            return rest.Response.fromSuccess({ followers });
-        });
-}
-function removeFollower(req: express.Request & { user: db.IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-
-    const { user } = req;
-    const { handle: followerHandle } = req.params;
-    const { handle: targetHandle } = user;
-
-    return db.users.removeFollower(followerHandle, targetHandle)
-        .then(() => rest.Response.fromSuccess());
-}
-
-function addFollower(req: express.Request & { user: db.IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    const { user } = req;
-    const { handle: followerHandle } = req.params;
-    const { handle: targetHandle } = user;
-
-    return db.users.addFollower(followerHandle, targetHandle)
-        .then(() => rest.Response.fromSuccess());
 }
