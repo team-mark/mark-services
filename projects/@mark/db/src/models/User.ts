@@ -167,7 +167,8 @@ export class User extends Model<IUserDb, IUserConsumer> {
             refU,
             state,
             followers: [],
-            following: []
+            following: [],
+            profilePicture: undefined
         };
 
         debug('user', user);
@@ -234,12 +235,13 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     public getManyByHandle(handles: string[]) {
         const filter: mongoDb.IFilter<IUserDb> = { handle: { $in: handles } };
-        return this.users.find(filter);
+        return this.findMany(filter);
     }
 
     public updateByHandle(handle: string, modifications: any) {
         const filter: mongoDb.IFilter<IUserDb> = { handle };
-        return this.users.updateOne<IUserDb>(filter, modifications);
+        return this.users.updateOne(filter, modifications)
+            .then(() => Promise.resolve());
     }
 
     public getFollowers(handle: string) {
@@ -253,32 +255,32 @@ export class User extends Model<IUserDb, IUserConsumer> {
     }
 
     public addFollower(followerHandle: string, targetHandle: string) {
-        return this.getByHandle(handle)
+        return this.getByHandle(targetHandle)
             .then(account => {
                 if (!account) {
-                    return Promise.reject(new Error(`User with handle '${handle}' does not exist.`));
+                    return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
                 } else {
                     const { followers } = account;
                     const modifications = {
                         followers: followers.concat(followerHandle)
                     };
-                    return this.updateByHandle(handle, modifications);
+                    return this.updateByHandle(targetHandle, modifications);
                 }
             });
     }
 
     public removeFollower(followerHandle: string, targetHandle: string) {
-        return this.getByHandle(handle)
+        return this.getByHandle(targetHandle)
             .then(account => {
                 if (!account) {
-                    return Promise.reject(new Error(`User with handle '${handle}' does not exist.`));
+                    return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
                 } else {
                     const { followers } = account;
                     const modifications = {
                         // filters specified follower handle (does not apply filter where f is not followerHandle)
                         followers: followers.filter(f => f !== followerHandle)
                     };
-                    return this.updateByHandle(handle, modifications);
+                    return this.updateByHandle(targetHandle, modifications);
                 }
             });
     }
