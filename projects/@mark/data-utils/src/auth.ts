@@ -8,7 +8,7 @@ export function authBasic(req: express.Request & { user?: db.IUserDb }, res: exp
         return rest.Response.fromUnauthorized().send(res);
     }
 
-    db.tokens.getById(token)
+    db.tokens.getByToken(token)
         .then(tokenRecord => {
             if (!tokenRecord) {
                 return rest.Response.fromUnauthorized().send(res);
