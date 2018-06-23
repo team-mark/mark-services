@@ -15,19 +15,18 @@ router.get('/', verify, respond(markFetch));
 router.post('/', verify, respond(markPost));
 
 function markFetch(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    return db.marks.retrieveMarks().then(marks => {
-        return Promise.resolve(rest.Response.fromSuccess(marks));
-    });
+    return db.marks.retrieveMarks()
+        .then(marks => rest.Response.fromSuccess(marks.forEach(db.Mark.map)));
 }
 
 function markPost(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     // add in input checks
-    const {body} = req.body;
+    const { body } = req.body;
     return db.marks.postMark(body)
         .then(result => {
             if (result)
                 return Promise.resolve(rest.Response.fromSuccess());
             else
-                return Promise.resolve(rest.Response.fromServerError());
+                return Promise.resolve(rest.Response.fromUnknownError());
         });
 }
