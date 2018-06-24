@@ -31,4 +31,8 @@ export class Like extends Model<ILikeDb, ILikeConsumer> {
 
         return mapped;
     }
+
+    public getLikes(handle: string): Promise<ILikeConsumer[]> {
+        
+    }
 }
