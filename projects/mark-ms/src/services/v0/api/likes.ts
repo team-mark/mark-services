@@ -11,26 +11,28 @@ const { authBasic, authAnon, notAllowed } = auth;
 const { verify } = rest;
 const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
-
 // Routes
 router.get('/', authBasic, verify, respond(likeFetch));
 router.post('/', authBasic, verify, respond(likePost));
 
 function likeFetch(req: express.Request  & { user: IUserConsumer }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     const { user } = req;
-    return db.likes.getLikes(user.handle).then(likes => {
+    return db.likes.getUsersLikes(user.handle).then(likes => {
         return Promise.resolve(rest.Response.fromSuccess(likes));
     });
 }
 
-function likePost(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    // add in input checks
-    const { body } = req.body;
-    return db.marks.postMark(body)
+function likePost(req: express.Request & {user: IUserConsumer}, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+    const { user } = req;
+    const { postId } = req.body;
+
+    return db.likes.addLike(postId, user.handle)
         .then(result => {
             if (result)
                 return Promise.resolve(rest.Response.fromSuccess());
             else
                 return Promise.resolve(rest.Response.fromUnknownError());
+        }, rejected => {
+            return Promise.resolve(rest.Response.fromBadRequest('code', 'mark already liked'));
         });
 }
