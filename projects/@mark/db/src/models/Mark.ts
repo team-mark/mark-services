@@ -70,28 +70,25 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         return mapped;
     }
 
-    // public retrieveMarks(): Promise<IMarkConsumer[]> {
-    //     const filter: mongoDb.IFilter<IMarkDb> = {};
-    //     const consumer: IMarkConsumer[] = [];
-    //     return this.findMany({})
-    //         .then(post_mdb => {
-    //             const hashes: string[] = [];
-    //             post_mdb.forEach((mark_mdb, index) => {
-    //                 hashes.push(mark_mdb.ethereum_id);
-    //                 consumer.push(Mark.map(mark_mdb));
-    //             });
-    //             return getManyIpfsPosts(hashes)
-    //                 .then(ipfs_posts => {
-    //                     for (let i = 0; i < ipfs_posts.length; i++) {
-    //                         consumer[i].body = ipfs_posts[i].content;
-    //                         consumer[i].author = ipfs_posts[i].author;
-    //                     }
-    //                     return Promise.resolve(consumer);
-    //                 });
-    //         });
-    // }
-    public retrieveMarks(): Promise<IMarkDb[]> {
-        return Promise.resolve(null);
+    public retrieveMarks(): Promise<IMarkConsumer[]> {
+        const filter: mongoDb.IFilter<IMarkDb> = {};
+        const consumer: IMarkConsumer[] = [];
+        return this.findMany({})
+            .then(post_mdb => {
+                const hashes: string[] = [];
+                post_mdb.forEach((mark_mdb, index) => {
+                    hashes.push(mark_mdb.ethereum_id);
+                    consumer.push(Mark.map(mark_mdb));
+                });
+                return getManyIpfsPosts(hashes)
+                    .then(ipfs_posts => {
+                        for (let i = 0; i < ipfs_posts.length; i++) {
+                            consumer[i].body = ipfs_posts[i].content;
+                            consumer[i].author = ipfs_posts[i].author;
+                        }
+                        return Promise.resolve(consumer);
+                    });
+            });
     }
 
     public postMark(content: string): Promise<IMarkDb> {

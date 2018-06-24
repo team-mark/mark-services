@@ -32,18 +32,19 @@ const collectionMap = {
     tokens: Token,
     users: User,
     marks: Mark,
+    likes: Like
 } as any;
 
 export const newObjectId = mongoDb.newObjectId;
 
-export let accountInfo: AccountInfo; // queries.accounts;
-// export let accounts: Account; // queries.accounts;
-export let tokens: Token; // queries.tokens;
-export let users: User; // queries.users;
-export let marks: Mark; // queries.marks;
+export let accountInfo: AccountInfo; 
+export let tokens: Token; 
+export let users: User; 
+export let marks: Mark; 
+export let likes: Like;
 
 // Export class static functions
-export { AccountInfo, Token, User, Mark };
+export { AccountInfo, Token, User, Mark, Like };
 
 export function init(): Promise<void> {
     return mongoDb.initalize()
