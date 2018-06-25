@@ -44,7 +44,7 @@ export class Mark extends Model<ICommentDb, ICommentConsumer> {
         return this.findMany(filter)
             .then(comment_mdb => {
                 const hashes: string[] = [];
-                
+
                 comment_mdb.forEach((comment_mdb, index) => {
                     hashes.push(comment_mdb.ethereum_id);
                     consumer.push(Mark.map(comment_mdb));

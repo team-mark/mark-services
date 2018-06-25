@@ -37,10 +37,10 @@ const collectionMap = {
 
 export const newObjectId = mongoDb.newObjectId;
 
-export let accountInfo: AccountInfo; 
-export let tokens: Token; 
-export let users: User; 
-export let marks: Mark; 
+export let accountInfo: AccountInfo;
+export let tokens: Token;
+export let users: User;
+export let marks: Mark;
 export let likes: Like;
 
 // Export class static functions
