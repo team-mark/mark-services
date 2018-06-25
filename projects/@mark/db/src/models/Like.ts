@@ -3,12 +3,12 @@ import * as mongo from 'mongodb';
 import Model, { IModelConsumer, IModelDb } from './Model';
 
 export interface ILikeConsumer extends IModelConsumer {
-    ownerHandle: string;
+    author: string;
     postId: string;
 }
 
 export interface ILikeDb extends IModelDb {
-    ownerHandle: string;
+    author: string;
     postId: string;
 }
 
@@ -25,7 +25,7 @@ export class Like extends Model<ILikeDb, ILikeConsumer> {
     public static map(like: ILikeDb): ILikeConsumer {
 
         const mapped: ILikeConsumer = {
-            ownerHandle: like.ownerHandle,
+            author: like.author,
             postId: like.postId
         };
 
@@ -33,7 +33,7 @@ export class Like extends Model<ILikeDb, ILikeConsumer> {
     }
 
     public getUsersLikes(handle: string): Promise<ILikeConsumer[]> {
-        const filter: mongoDb.IFilter<ILikeDb> = {ownerHandle: handle};
+        const filter: mongoDb.IFilter<ILikeDb> = {author: handle};
         const consumer: ILikeConsumer[] = [];
         return this.findMany(filter)
             .then(likes => {
@@ -45,7 +45,7 @@ export class Like extends Model<ILikeDb, ILikeConsumer> {
     // returns true for like in the db
     // false otherwise
     public checkLike(_postId: string, handle: string): Promise<Boolean> {
-        const filter: mongoDb.IFilter<ILikeDb> = {ownerHandle: handle, postId: _postId};
+        const filter: mongoDb.IFilter<ILikeDb> = {author: handle, postId: _postId};
         return this.findOne(filter)
             .then(result => {
                 if (result)
@@ -58,7 +58,7 @@ export class Like extends Model<ILikeDb, ILikeConsumer> {
     public addLike(_postId: string, handle: string): Promise<ILikeDb> {
         const likeDb: ILikeDb = {
             postId: _postId,
-            ownerHandle: handle
+            author: handle
         };
         return this.checkLike(_postId, handle)
             .then(result => {
