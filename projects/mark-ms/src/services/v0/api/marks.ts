@@ -24,9 +24,8 @@ function markFetch(req: express.Request, res: express.Response, next: express.Ne
 function markPost(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     // add in input checks
     const { body } = req.body;
-    const owner = res.locals.owner;
 
-    return db.marks.postMark(body, owner)
+    return db.marks.postMark(body, res.locals.owner)
         .then(result => {
             if (result)
                 return Promise.resolve(rest.Response.fromSuccess());
