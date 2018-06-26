@@ -143,9 +143,9 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public create(userId: string | object, handle: string, refU: string, linkPK: string, state?: string): Promise<IUserDb> {
 
         const web3 = W3.getInstance();
-       
+
         const ethWallet: IEthereumAccount = web3.eth.accounts.create();
-        
+
         // {
         //     address: '0x8f56Abb01CB4FF518099133F3612A306ba6d6dF9',
         //     privateKey: '0x309de7e17d0f0b3e75087115febb90fca9b88ff76bca083aecfacb4f4e6b90e3',

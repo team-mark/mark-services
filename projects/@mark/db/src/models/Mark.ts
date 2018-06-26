@@ -71,30 +71,66 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         return mapped;
     }
 
-    public retrieveMarks(): Promise<IMarkConsumer[]> {
-        const filter: mongoDb.IFilter<IMarkDb> = {};
+    // Assembles IMarkConsumers given a list of MongoDb Mark documents
+    private static assembleMarks(marks: IMarkDb[]): Promise<IMarkConsumer[]> {
+        const hashes: string[] = [];
         const consumer: IMarkConsumer[] = [];
-        return this.findMany({})
-            .then(post_mdb => {
-                const hashes: string[] = [];
-                post_mdb.forEach((mark_mdb, index) => {
-                    hashes.push(mark_mdb.ethereum_id);
-                    consumer.push(Mark.map(mark_mdb));
-                });
-                return getManyIpfsPosts(hashes)
-                    .then(ipfs_posts => {
-                        for (let i = 0; i < ipfs_posts.length; i++) {
-                            consumer[i].body = ipfs_posts[i].content;
-                            consumer[i].author = ipfs_posts[i].author;
-                        }
-                        return Promise.resolve(consumer);
-                    });
+
+        marks.forEach((mark, index) => {
+            hashes.push(mark.ethereum_id);
+            consumer.push(Mark.map(mark));
+        });
+
+        return getManyIpfsPosts(hashes)
+            .then(ipfs_posts => {
+                for (let i = 0; i < ipfs_posts.length; i++) {
+                    consumer[i].body = ipfs_posts[i].content;
+                    consumer[i].author = ipfs_posts[i].author;
+                }
+                return Promise.resolve(consumer);
+            });
+    }
+
+    /**
+     * Returns Marks by time created
+     * @param sort      -1 for descending sort 1 for ascending sort
+     * @param skip      Number of records to skip
+     * @param size      Number of records to return
+    */
+    public getMarks(sort: number, skip: number, size: number, query?: mongoDb.IFilter): Promise<IMarkConsumer[]> {
+        const cursor: mongoDb.ICursor<IMarkDb> = this.collection.find(query);
+
+        if(sort == 1 || sort == -1)
+            cursor.sort({createdAt: sort});
+        cursor.skip(skip);
+        cursor.limit(size);
+
+        return cursor.toArray()
+            .then(marks => {
+                return Mark.assembleMarks(marks);
+            }, error => {
+                console.log(error);
+                return Promise.reject(new Error('Internal error'));
+            });
+    }
+
+    public getMarksAggregate(query: mongoDb.IFilter<IMarkDb>[], skip?:number, size?: number): Promise<IMarkConsumer[]> {
+        const cursor: mongoDb.IAggregationCursor<IMarkDb> = this.aggregate(query);
+
+        if(skip)
+            cursor.skip(skip);
+        if(size)
+            cursor.limit(size);
+
+        return cursor.toArray()
+            .then(marks => {
+                return Mark.assembleMarks(marks);
             });
     }
 
     public postMark(content: string, user: string): Promise<IMarkDb> {
         const post = new IpfsPost(user, new Date(), content);
-        
+
         // TODO: Add in bots.submitMessage
         return addIpfsPost(post)
             .then(hash => {

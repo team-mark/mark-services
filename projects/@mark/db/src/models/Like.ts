@@ -12,6 +12,11 @@ export interface ILikeDb extends IModelDb {
     postId: string;
 }
 
+export interface ILikeSorted extends IModelConsumer {
+    postId: string;
+    likes: number;
+}
+
 const COLLECTION_NAME = 'likes';
 
 export class Like extends Model<ILikeDb, ILikeConsumer> {
@@ -43,7 +48,7 @@ export class Like extends Model<ILikeDb, ILikeConsumer> {
 
     public getMarkLikes(id: string): Promise<ILikeConsumer[]> {
         const filter: mongoDb.IFilter<ILikeDb> = {postId: id};
-        
+
         return this.findMany(filter)
             .then(likes => {
                 return Promise.resolve(likes.map(Like.map));
@@ -75,6 +80,31 @@ export class Like extends Model<ILikeDb, ILikeConsumer> {
                     return Promise.reject(new Error('Like already exists'));
                 else
                     return Promise.resolve(this.insertOne(likeDb));
+            });
+    }
+
+    /**
+     * Returns likes sorted by most or least likes.
+     * @param sort      -1 for descending sort 1 for ascending sort
+     * @param skip      Number of records to skip
+     * @param size      Number of records to return
+    */
+    public getSortedLikes(sort: number, skip: number, size: number): Promise<ILikeSorted[]> {
+        console.log(sort, skip, size);
+        const filter: mongoDb.IFilter<ILikeDb> = {$group: {_id: '$postId', likes: {$sum: 1}}};
+        const filter2: mongoDb.IFilter<ILikeDb> = {$sort: {likes: sort}};
+        const cursor: mongoDb.IAggregationCursor<ILikeSorted> = this.aggregate([filter, filter2]);
+
+        try {
+            cursor.skip(skip);
+            cursor.limit(size);
+        } catch (error) {
+            console.error(error);
+        }
+
+        return cursor.toArray()
+            .then(records => {
+                return Promise.resolve(records);
             });
     }
 }
