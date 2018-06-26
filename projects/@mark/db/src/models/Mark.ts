@@ -4,6 +4,7 @@ import { mongoDb } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
 import { IpfsPost } from './IpfsPost';
 import { addIpfsPost, getManyIpfsPosts } from '../components/ipfs';
+import { IUserDb } from './User';
 
 export interface IMarkConsumer extends IModelConsumer {
     // id: string;
@@ -91,8 +92,9 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             });
     }
 
-    public postMark(content: string): Promise<IMarkDb> {
-        const post = new IpfsPost('An author', new Date(), content);
+    public postMark(content: string, user: string): Promise<IMarkDb> {
+        const post = new IpfsPost(user, new Date(), content);
+        
         // TODO: Add in bots.submitMessage
         return addIpfsPost(post)
             .then(hash => {

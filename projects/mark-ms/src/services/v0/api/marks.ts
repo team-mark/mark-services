@@ -4,6 +4,7 @@ module.exports = router;
 import * as db from '@mark/db';
 import { rest, cryptoLib } from '@mark/utils';
 import { auth, bots } from '@mark/data-utils';
+import { IUserDb } from '@mark/db';
 const debug = require('debug')('mark:accounts');
 
 const { authBasic, authAnon, notAllowed } = auth;
@@ -11,8 +12,8 @@ const { verify } = rest;
 const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
 // Routes
-router.get('/', verify, respond(markFetch));
-router.post('/', verify, respond(markPost));
+router.get('/', authBasic, verify, respond(markFetch));
+router.post('/', authBasic, verify, respond(markPost));
 
 function markFetch(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     return db.marks.retrieveMarks().then(marks => {
@@ -23,8 +24,9 @@ function markFetch(req: express.Request, res: express.Response, next: express.Ne
 function markPost(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     // add in input checks
     const { body } = req.body;
+    const owner = res.locals.owner;
 
-    return db.marks.postMark(body)
+    return db.marks.postMark(body, owner)
         .then(result => {
             if (result)
                 return Promise.resolve(rest.Response.fromSuccess());
