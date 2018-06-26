@@ -16,7 +16,6 @@ router.get('/', authBasic, verify, respond(likesByUser));
 router.get('/:id', authBasic, verify, respond(likesOnPost));
 router.post('/', authBasic, verify, respond(likePost));
 
-
 function likesByUser(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     return db.likes.getUsersLikes(res.locals.owner)
         .then(likes => {
