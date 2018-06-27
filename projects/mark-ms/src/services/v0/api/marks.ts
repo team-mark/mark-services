@@ -15,7 +15,7 @@ const { verify } = rest;
 const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
 // Routes
-router.get('/', authBasic, verify, respond(markFetch));
+router.get('/', verify, respond(markFetch));
 router.post('/', authBasic, verify, respond(markPost));
 
 function markFetch(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {

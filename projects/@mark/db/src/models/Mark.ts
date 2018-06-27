@@ -7,13 +7,11 @@ import { addIpfsPost, getManyIpfsPosts } from '../components/ipfs';
 import { IUserDb } from './User';
 
 export interface IMarkConsumer extends IModelConsumer {
-    // id: string;
     ethereum_id: string;
     author: string;
     body: string;
     score?: number;
-    // likes: number;
-    // dislikes: number;
+
 }
 export interface IMarkDb extends IModelDb {
     // id: mongo.ObjectID;
@@ -66,6 +64,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             ethereum_id: mark.ethereum_id,
             body: null,
             author: null,
+            createdAt: mark.createdAt.toDateString(),
         };
 
         return mapped;
