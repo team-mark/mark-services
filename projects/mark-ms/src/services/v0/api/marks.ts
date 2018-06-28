@@ -19,15 +19,15 @@ router.get('/', verify, respond(markFetch));
 router.post('/', authBasic, verify, respond(markPost));
 
 function markFetch(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    let { sort, skip, size, ids} = req.query;
+    let { sort, skip, limit, ids} = req.query;
     const query: mongoDb.IFilter<IMarkDb>[] = [];
 
     sort = parseInt(sort);
     skip = parseInt(skip);
-    size = parseInt(size);
+    limit = parseInt(limit);
 
-    if (!size)
-        size = 10;
+    if (!limit)
+        limit = 10;
     if (!skip)
         skip = 0;
     if (!sort)
@@ -52,7 +52,7 @@ function markFetch(req: express.Request, res: express.Response, next: express.Ne
             });
     }
 
-    return db.marks.getMarks(sort, skip, size).then(marks => {
+    return db.marks.getMarks(sort, skip, limit).then(marks => {
         return Promise.resolve(rest.Response.fromSuccess(marks));
     });
 }

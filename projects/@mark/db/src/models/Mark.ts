@@ -99,7 +99,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     public getMarks(sort: number, skip: number, size: number, query?: mongoDb.IFilter): Promise<IMarkConsumer[]> {
         const cursor: mongoDb.ICursor<IMarkDb> = this.collection.find(query);
 
-        if(sort == 1 || sort == -1)
+        if (sort === 1 || sort === -1)
             cursor.sort({createdAt: sort});
         cursor.skip(skip);
         cursor.limit(size);
@@ -113,12 +113,12 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             });
     }
 
-    public getMarksAggregate(query: mongoDb.IFilter<IMarkDb>[], skip?:number, size?: number): Promise<IMarkConsumer[]> {
+    public getMarksAggregate(query: mongoDb.IFilter<IMarkDb>[], skip?: number, size?: number): Promise<IMarkConsumer[]> {
         const cursor: mongoDb.IAggregationCursor<IMarkDb> = this.aggregate(query);
 
-        if(skip)
+        if (skip)
             cursor.skip(skip);
-        if(size)
+        if (size)
             cursor.limit(size);
 
         return cursor.toArray()
