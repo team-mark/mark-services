@@ -143,7 +143,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public create(userId: string | object, handle: string, refU: string, linkPK: string, state?: string): Promise<IUserDb> {
 
         const web3 = W3.getInstance();
-        const ethWallet: IEthereumAccount = web3.eth.users.create();
+        const ethWallet: IEthereumAccount = web3.eth.accounts.create();
 
         // {
         //     address: '0x8f56Abb01CB4FF518099133F3612A306ba6d6dF9',
@@ -235,7 +235,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     public getManyByHandle(handles: string[]) {
         const filter: mongoDb.IFilter<IUserDb> = { handle: { $in: handles } };
-        return this.users.find(filter);
+        return this.findMany(filter);
     }
 
     public updateByHandle(handle: string, modifications: any) {
