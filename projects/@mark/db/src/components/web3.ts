@@ -1,16 +1,18 @@
-import * as W3 from 'web3';
-const Web3 = W3.default;
+import * as Web3 from 'web3';
+let _instance: Web3;
 
-let _instance: W3.default;
+const { ETH_ENDPOINT } = process.env;
 
 export function init() {
     if (!_instance) {
-        const { ETH_ENDPOINT } = process.env;
-        _instance = new Web3(new Web3.providers.HttpProvider(ETH_ENDPOINT));
+
+        const ETH_ENDPOINT = 'http://66baa351.ngrok.io';
+        const provider = new Web3.providers.HttpProvider(ETH_ENDPOINT);
+        _instance = new Web3(provider);
     }
 }
 
-export function getInstance(): W3.default {
+export function getInstance() {
     if (!_instance) {
         init();
     }
