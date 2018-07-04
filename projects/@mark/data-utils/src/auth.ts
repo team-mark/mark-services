@@ -19,9 +19,11 @@ export function authBasic(req: express.Request & { user?: db.IUserDb }, res: exp
                 return rest.Response.fromUnauthorized().send(res);
             } else {
                 const { owner } = tokenRecord;
+
                 db.users.getByHandle(owner)
                     .then(userRecord => {
                         req.user = userRecord;
+                        res.locals.owner = owner;
                         next();
                     });
             }

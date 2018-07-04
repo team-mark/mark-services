@@ -4,3 +4,7 @@ localconfig.json
 
 **/*/testing/**/*
 projects/mark-ai/src/python/__pycache__/
+
+projects/mark-ai/embeddings/
+
+projects/mark-ai/models/bot_detection/

@@ -6,6 +6,7 @@ const { ETH_ENDPOINT } = process.env;
 export function init() {
     if (!_instance) {
 
+        // const { ETH_ENDPOINT } = process.env;
         const ETH_ENDPOINT = 'http://66baa351.ngrok.io';
         const provider = new Web3.providers.HttpProvider(ETH_ENDPOINT);
         _instance = new Web3(provider);

@@ -7,6 +7,8 @@ const debug = require('debug')('mark:db');
 // Export types for convenience
 export type ICollection = mongo.Collection;
 export type IFilter<T = any> = mongo.FilterQuery<T>;
+export type IAggregationCursor<T = any> = mongo.AggregationCursor<T>;
+export type ICursor<T = any> = mongo.Cursor<T>;
 
 // reference: https://docs.mongodb.com/manual/reference/command/createIndexes/
 export type CollectionIndex = {
@@ -101,6 +103,10 @@ export class Collection<T> {
 
     protected findOne(query: IFilter): Promise<T> {
         return this.collection.findOne(query);
+    }
+
+    protected aggregate(query: IFilter[]): mongo.AggregationCursor {
+        return this.collection.aggregate(query);
     }
 
     protected findMany(query: IFilter): Promise<T[]> {

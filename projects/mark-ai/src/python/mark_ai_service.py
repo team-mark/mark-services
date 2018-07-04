@@ -5,24 +5,28 @@ import preprocess_twitter as pt
 import redis
 import json
 import numpy as np
+import sys
+import getopt
 from tensorflow.python.keras.preprocessing import sequence
 from threading import Event, Thread
 from tensorflow.contrib import predictor
 
+
 CONFIG = {
-    'host': 'localhost',
-    'port': 6379,
-    'db': 0
+    'host': None,
+    'port': None,
+    'db': 0,
+    'password': None
 }
-CHANNEL = 'bots-req-*'
-CHANNEL_REPLY = 'bots-reply-'
+CHANNEL = 'bots-*'
+CHANNEL_REPLY = 'botsreply-'
 
 def run_model(q, stop, predict_fn, word2id, red):
    
     while(not stop.is_set()):
         try:
             message = q.get_nowait()
-            content = message['content']
+            content = message['content'].decode("utf-8")
             channel = message['channel'].decode("utf-8")
             split = pt.tokenize(content)
             split = split.split()
@@ -59,7 +63,28 @@ def run_model(q, stop, predict_fn, word2id, red):
         except queue.Empty:
             continue
 
-if __name__ == "__main__":
+
+def main(argv):
+    try:
+        opts, args = getopt.getopt(argv, "h:pw:p:", ['host=', 'password=', 'port='])
+    except getopt.GetoptError as err:
+        print('mark_ai_service.py -ip <ip address> -pw <password> -port <port>')
+        print(err)
+        sys.exit(2)
+
+    for opt, arg in opts:
+        if opt == "-ip":
+            CONFIG['host'] = arg
+        elif opt == "-pw":
+            CONFIG['password'] = arg
+        elif opt == "-port":
+            CONFIG['port'] = arg
+
+    if CONFIG['host'] == None or CONFIG['password'] == None or CONFIG['port'] == None:
+        print('Missing arguments:')
+        print('mark_ai_service.py -ip <ip address> -pw <password> -port <port>')
+        sys.exit()
+    
     red = redis.StrictRedis(**CONFIG)
     stop = Event()
     q = queue.Queue()
@@ -87,10 +112,9 @@ if __name__ == "__main__":
             if(item['pattern'] == None):
                 continue
 
-            content = json.loads(item['data'])['content']
             job = dict(
                     channel=item['channel'],
-                    content=content)
+                    content=item['data'])
             q.put(job)
 
     print("setting thread stop")
@@ -98,3 +122,5 @@ if __name__ == "__main__":
     print("thread.join")
     thread.join()
 
+if __name__ == "__main__":
+    main(sys.argv[1:])
