@@ -7,6 +7,7 @@ import { authentication, cryptoLib, rest } from '@mark/utils';
 import * as STATUS from 'http-status';
 import * as multer from 'multer';
 import { IUserDb } from '@mark/db';
+import { getLinkQ } from '../../../../../@mark/utils/lib/authentication';
 
 const UPLOAD_PATH = 'uploads';
 const upload = multer({ dest: `${UPLOAD_PATH}/` }); // multer configuration
@@ -24,7 +25,7 @@ router.route('/info')
     .get(authBasic, verify, respond(info))
     .all(notAllowed);
 router.route('/login')
-    .post(authBasic, verify, respond(login))
+    .post(verify, respond(login))
     .all(notAllowed);
 router.route('/check-handle-availability')
     .post(authAnon, verify, respond(checkHandleAvailability))
@@ -41,8 +42,81 @@ router.route('/update-profile-picture')
 
 // Route definitions
 function login(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    // res.send({ username: 'ferrantejake' });
-    return null;
+    const { handle, passwordh, key: OTP } = req.body;
+    let userRecord: db.IUserDb;
+
+    if (!handle)
+        return Promise.resolve(rest.Response.fromBadRequest('field_required', 'handle required'));
+    if (!passwordh)
+        return Promise.resolve(rest.Response.fromBadRequest('field_required', 'passwordh required'));
+    if (!OTP)
+        return Promise.resolve(rest.Response.fromBadRequest('field_required', 'key required'));
+
+    debug('login:', handle, passwordh);
+
+    return Promise.all([
+        db.users.getByHandle(handle),
+        cryptoLib.hashPassword(passwordh)
+    ])
+        .then(([_userRecord, passHash]) => {
+            userRecord = _userRecord;
+
+            debug('userRecord', userRecord);
+            const { refU, address, _id } = userRecord;
+            const userId = _id.toHexString();
+
+            return authentication.getRefI(refU, address, passHash);
+        })
+        .then(refI => {
+            debug('refI', refI);
+            return db.accountInfo.existsByRefI(refI);
+        })
+        .then(exists => {
+            if (exists) {
+
+                const { refU, address, _id } = userRecord;
+                const userId = _id.toHexString();
+
+                return Promise.all([
+                    authentication.getLinkQ(handle, passwordh, OTP),
+                    authentication.getRefU(userId, handle, passwordh)
+                ])
+                    .then(([linkQ, refU]) => {
+                        return Promise.all([
+                            authentication.getRefT(handle, passwordh, OTP),
+                            authentication.getLinkA(linkQ, refU)
+                        ]);
+                    })
+                    .then(([refT, linkA]) => {
+                        return db.tokens.whitelist(refT, linkA, handle);
+                    });
+            } else {
+                return Promise.reject(rest.Response.fromBadRequest('invalid_login', 'invalid handle or password'));
+            }
+        })
+        .then(tokenRecord => {
+            debug('created token', tokenRecord.token);
+
+            const response = rest.Response.fromSuccess(db.Token.mapForConsumer(tokenRecord));
+            return Promise.resolve(response);
+        })
+        .catch((errorOrResponse: Error | rest.Response) => {
+            debug('errorOrResponse', errorOrResponse);
+            if ((errorOrResponse as Object).constructor === Error) {
+                // error type, response with 500;
+                return Promise.resolve(rest.Response.fromUnknownError());
+
+            } else {
+                // planned rejection, respond with rejection
+                if ((errorOrResponse as rest.Response).status === STATUS.INTERNAL_SERVER_ERROR) {
+
+                    return Promise.resolve(rest.Response.fromUnknownError());
+                } else {
+                    return Promise.resolve(errorOrResponse as rest.Response);
+                }
+            }
+        });
+
 }
 /**
  *
@@ -52,8 +126,8 @@ function login(req: express.Request, res: express.Response, next: express.NextFu
  * references: https://en.wikipedia.org/wiki/PBKDF2
  */
 function info(req: express.Request & { user: IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    const { user } = req;
-    return Promise.resolve(rest.Response.fromSuccess(db.User.map(user)));
+    const { userRecord } = res.locals;
+    return Promise.resolve(rest.Response.fromSuccess(db.User.map(userRecord)));
 }
 function signup(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     debug('signup', req.query);
@@ -121,14 +195,15 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                             debug('refA', refU);
                             return db.users.create(userId, handle, refU, linkPK, state);
                         })
-                        .then(accountRecord => {
-                            const { address: walletAddress } = accountRecord;
+                        .then(userRecord => {
+                            const { address: walletAddress } = userRecord;
 
                             return authentication.getRefI(refU, walletAddress, passh)
                                 .then(refI => {
 
                                     const linkI = authentication.getLinkI(linkR, refI);
                                     const modifications = {
+                                        ...userRecord,
                                         linkI
                                     };
 
@@ -325,6 +400,9 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
             redisConnect.instance()
         ])
             .then(([hashedKey, redisClient]) => {
+
+                debug(hashedKey, 'hashedKey');
+                debug(accountInfoKey, 'accountInfoKey');
 
                 redisClient.get(accountInfoKey, (error: Error, reply: string) => {
                     if (error) {

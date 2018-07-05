@@ -100,11 +100,11 @@ export function promiseResponseMiddlewareWrapper(debug: any) {
             // debug('generating middleware');
             promiseMiddleware(req, res, next)
                 .then(restResponse => {
-                    // debug('responding to middleware');
+                    debug('responding to middleware', restResponse);
                     restResponse.send(res);
                 })
                 .catch(error => {
-                    // debug('error in middleware');
+                    debug('error in middleware');
                     if (debug) {
                         debug(error);
                     }

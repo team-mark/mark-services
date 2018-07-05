@@ -22,8 +22,11 @@ export function authBasic(req: express.Request & { user?: db.IUserDb }, res: exp
 
                 db.users.getByHandle(owner)
                     .then(userRecord => {
-                        req.user = userRecord;
-                        res.locals.owner = owner;
+                        res.locals = {
+                            ...res.locals,
+                            userRecord,
+                            tokenRecord
+                        };
                         next();
                     });
             }
@@ -36,4 +39,9 @@ export function authAnon(req: express.Request, res: express.Response, next: expr
 
 export function notAllowed(req: express.Request, res: express.Response, next: express.NextFunction): void {
     rest.Response.fromNotAllowed().send(res);
+}
+
+export interface BasicAuthFields {
+    tokenRecord: db.ITokenDb;
+    userRecord: db.IUserDb;
 }

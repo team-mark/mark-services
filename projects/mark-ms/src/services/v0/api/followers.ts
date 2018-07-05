@@ -33,29 +33,29 @@ function getAccount(req: express.Request, res: express.Response, next: express.N
         });
 }
 
-function listFollowers(req: express.Request & { user: db.IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    const { user } = req;
+function listFollowers(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+    const { userRecord } = res.locals;
 
-    return db.users.getFollowers(user.handle)
+    return db.users.getFollowers(userRecord.handle)
         .then(followers => {
             // const followers = {};
             return rest.Response.fromSuccess({ followers });
         });
 }
-function removeFollower(req: express.Request & { user: db.IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+function removeFollower(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
 
-    const { user } = req;
+    const { userRecord } = res.locals;
     const { handle: followerHandle } = req.params;
-    const { handle: targetHandle } = user;
+    const { handle: targetHandle } = userRecord;
 
     return db.users.removeFollower(followerHandle, targetHandle)
         .then(() => rest.Response.fromSuccess());
 }
 
-function addFollower(req: express.Request & { user: db.IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    const { user } = req;
+function addFollower(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+    const { userRecord } = res.locals;
     const { handle: followerHandle } = req.params;
-    const { handle: targetHandle } = user;
+    const { handle: targetHandle } = userRecord;
 
     return db.users.addFollower(followerHandle, targetHandle)
         .then(() => rest.Response.fromSuccess());

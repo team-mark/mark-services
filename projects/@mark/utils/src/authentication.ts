@@ -169,6 +169,17 @@ export function getRefPK(linkPK: string, privateKey: string) {
 }
 
 /**
+ * Derive eth user's private key from linkPK and refPK.
+ * @param linkPK
+ * @param refPk
+ * @return BASE64 STRING
+ */
+export function getPrivateKey(linkPK: string, refPk: string) {
+    const privateKey = cryptoLib.XORBase64Strings(linkPK, refPk);
+    return privateKey;
+}
+
+/**
  * Derived on the fly for encrypting wallet private key.
  * @param userId
  * @param handle

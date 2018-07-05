@@ -1,18 +1,24 @@
 // Database Interface for the Marks (Post) collection
 import { bots } from '@mark/data-utils';
+import { authentication } from '@mark/utils';
 import { mongoDb } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
+import { User } from './User';
 import { IpfsPost } from './IpfsPost';
+import { EthereumPost } from './EthereumPost';
 import { addIpfsPost, getManyIpfsPosts } from '../components/ipfs';
 import { IUserDb } from './User';
+import { ethereum } from '../components';
+
+const debug = require('debug')('mark:Mark');
 
 export interface IMarkConsumer extends IModelConsumer {
     ethereum_id: string;
     author: string;
     body: string;
     score?: number;
-
 }
+
 export interface IMarkDb extends IModelDb {
     // id: mongo.ObjectID;
     ethereum_id: string;
@@ -100,7 +106,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         const cursor: mongoDb.ICursor<IMarkDb> = this.collection.find(query);
 
         if (sort === 1 || sort === -1)
-            cursor.sort({createdAt: sort});
+            cursor.sort({ createdAt: sort });
         cursor.skip(skip);
         cursor.limit(size);
 
@@ -127,15 +133,54 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             });
     }
 
-    public postMark(content: string, user: string): Promise<IMarkDb> {
-        const post = new IpfsPost(user, new Date(), content);
+    /**
+     * Post mark to IPFS, Ethereum, and Mark.
+     * @param content post content
+     * @param user user record
+     * @param passwordh password hash
+     */
+    public create(content: string, user: IUserDb, passwordh: string): Promise<IMarkDb> {
+        // 1. get Ethereum private key
+        // 1. get Ethereum private key
+        // 2. post to IPFS
+        // 3. post to Ethereum
+        // 4. record entry in Mongo
 
-        // TODO: Add in bots.submitMessage
-        return addIpfsPost(post)
-            .then(hash => {
+        debug('new content being created');
+        debug('content', content);
+        debug('user', user);
+        debug('passwordh', passwordh);
+
+        const { handle, refPK, _id, address } = user;
+        const post = new IpfsPost(handle, new Date(), content);
+
+        const userId = User.mapId(_id);
+
+        // bots.submitMessage(content)
+        //     .then(() => authentication.getLinkPK(userId, handle, passwordh))
+        return authentication.getLinkPK(userId, handle, passwordh)
+            .then(linkPK => {
+
+                debug('linkPK', linkPK);
+                const privateKey = authentication.getPrivateKey(linkPK, refPK);
+                debug('privateKey', privateKey);
+
+                // TODO: Add in bots.submitMessage
+                return addIpfsPost(post)
+                    .then(ipfsHash => {
+                        debug('ipfsHash', ipfsHash);
+
+                        const ethPost = new EthereumPost(ipfsHash);
+                        return ethereum.addEthereumPost(ethPost, address, privateKey);
+                    });
+            })
+            .then(txHash => {
+                debug('txHash', txHash);
+
                 const mark: IMarkDb = {
-                    ethereum_id: hash
+                    ethereum_id: txHash,
                 };
+
                 return this.insertOne(mark);
             });
     }

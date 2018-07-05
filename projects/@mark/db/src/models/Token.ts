@@ -41,4 +41,10 @@ export class Token extends Model<ITokenDb, ITokenConsumer> {
         const filter = { token };
         return this.findOne(filter);
     }
+
+    public static mapForConsumer(tokenRecord: Partial<ITokenDb>): ITokenConsumer {
+        return {
+            token: tokenRecord.token
+        };
+    }
 }
