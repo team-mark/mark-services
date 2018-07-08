@@ -1,7 +1,8 @@
 // Database Interface for the Marks (Post) collection
 import { bots } from '@mark/data-utils';
 import { authentication } from '@mark/utils';
-import { mongoDb } from '../components';
+import * as db from '../../';
+import { mongoDb, ipfs } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
 import { User } from './User';
 import { IpfsPost } from './IpfsPost';
@@ -14,14 +15,16 @@ const debug = require('debug')('mark:Mark');
 
 export interface IMarkConsumer extends IModelConsumer {
     ethereum_id: string;
-    author: string;
+    owner: string;
     body: string;
     score?: number;
 }
 
 export interface IMarkDb extends IModelDb {
     // id: mongo.ObjectID;
+    owner: string;
     ethereum_id: string;
+    ipfs_id: string;
 }
 
 const COLLECTION_NAME = 'marks';
@@ -64,12 +67,11 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     }
 
     public static map(mark: IMarkDb): IMarkConsumer {
-
         const mapped: IMarkConsumer = {
             id: mark._id.toString(),
             ethereum_id: mark.ethereum_id,
             body: null,
-            author: null,
+            owner: null,
             createdAt: mark.createdAt.toDateString(),
         };
 
@@ -90,7 +92,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             .then(ipfs_posts => {
                 for (let i = 0; i < ipfs_posts.length; i++) {
                     consumer[i].body = ipfs_posts[i].content;
-                    consumer[i].author = ipfs_posts[i].author;
+                    consumer[i].owner = ipfs_posts[i].author;
                 }
                 return Promise.resolve(consumer);
             });
@@ -134,6 +136,78 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     }
 
     /**
+     *
+     * @param handle
+     * @param opts
+     */
+    public listFeed(
+        handle: string,
+        opts?: {
+            limit?: number,
+            nextField?: string
+            nextId?: string
+            nextDirection?: mongoDb.NextQueryDirection
+        }): Promise<{
+            items: IMarkConsumer[],
+            nextId: string,
+        }> {
+
+        debug('listFeed');
+
+        const DEFAULT_LIMIT = 100;
+
+        const filter = { owner: handle, };
+        const options = {};
+        const sort = {};
+        const { limit, nextDirection, nextField, nextId } = opts;
+
+        let consumableMarks: IMarkConsumer[] = [];
+
+        debug('about to query');
+
+        return db.marks.q<IMarkDb>(
+            filter,
+            options,
+            sort,
+            limit,
+            nextField,
+            nextId,
+            nextDirection
+        )
+            .then(marksMeta => {
+
+                debug('markMeta');
+                const { nextId } = marksMeta;
+                consumableMarks = marksMeta.items as any;
+
+                const hashes = marksMeta.items.map(m => m.ipfs_id);
+
+                return ipfs.getManyIpfsPosts(hashes)
+                    .then(ipfsPosts => {
+
+                        debug('ipfsPosts');
+
+                        // Update consumable marks content
+                        ipfsPosts.forEach((post, index) => {
+                            consumableMarks[index].body = post.content;
+                        });
+
+                        return Promise.resolve({
+                            items: consumableMarks,
+                            nextId
+                        });
+                    });
+
+            })
+            .catch(error => debug(error));
+    }
+
+    public getByOwner(handle: string): Promise<IMarkDb[]> {
+        const filter = { owner: handle };
+        return db.marks.findMany(filter);
+    }
+
+    /**
      * Post mark to IPFS, Ethereum, and Mark.
      * @param content post content
      * @param user user record
@@ -156,6 +230,13 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
 
         const userId = User.mapId(_id);
 
+        const mark: IMarkDb = {
+            owner: handle,
+            // filled in below
+            ethereum_id: undefined,
+            ipfs_id: undefined
+        };
+
         // bots.submitMessage(content)
         //     .then(() => authentication.getLinkPK(userId, handle, passwordh))
         return authentication.getLinkPK(userId, handle, passwordh)
@@ -170,6 +251,8 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                     .then(ipfsHash => {
                         debug('ipfsHash', ipfsHash);
 
+                        mark.ipfs_id = ipfsHash;
+
                         const ethPost = new EthereumPost(ipfsHash);
                         return ethereum.addEthereumPost(ethPost, address, privateKey);
                     });
@@ -177,9 +260,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             .then(txHash => {
                 debug('txHash', txHash);
 
-                const mark: IMarkDb = {
-                    ethereum_id: txHash,
-                };
+                mark.ethereum_id = txHash;
 
                 return this.insertOne(mark);
             });

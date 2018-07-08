@@ -7,7 +7,6 @@ import { authentication, cryptoLib, rest } from '@mark/utils';
 import * as STATUS from 'http-status';
 import * as multer from 'multer';
 import { IUserDb } from '@mark/db';
-import { getLinkQ } from '../../../../../@mark/utils/lib/authentication';
 
 const UPLOAD_PATH = 'uploads';
 const upload = multer({ dest: `${UPLOAD_PATH}/` }); // multer configuration

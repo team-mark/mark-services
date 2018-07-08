@@ -4,10 +4,8 @@ module.exports = router;
 import * as db from '@mark/db';
 import { rest, cryptoLib } from '@mark/utils';
 import { auth, bots } from '@mark/data-utils';
-import { IUserDb } from '@mark/db';
 import { mongoDb } from '@mark/db/lib/components';
 import { IMarkDb } from '@mark/db/lib/models';
-import { newObjectId } from '@mark/db/lib/components/mongoDb';
 const debug = require('debug')('mark:accounts');
 
 const { authBasic, authAnon, notAllowed } = auth;
@@ -15,8 +13,15 @@ const { verify } = rest;
 const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
 // Routes
-router.get('/', verify, respond(markFetch));
-router.post('/', authBasic, verify, respond(markPost));
+router.route('/')
+    .get(authBasic, verify, respond(listMarks))
+    // .post(authBasic, verify, respond(createMark))
+    // .put(authBasic, verify, respond(reviseMark))
+    .all(notAllowed);
+
+function listMarks(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+return null;
+}
 
 function markFetch(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     let { sort, skip, limit, ids } = req.query;
@@ -67,15 +72,12 @@ function markFetch(req: express.Request, res: express.Response, next: express.Ne
 function markPost(req: express.Request, res: express.Response & auth.BasicAuthFields, next: express.NextFunction): Promise<rest.Response> {
     // add in input checks
     const { body, passwordh } = req.body;
-    const { tokenRecord, userRecord }: auth.BasicAuthFields = res.locals;
+    const { userRecord }: auth.BasicAuthFields = res.locals;
 
-    // return db.marks.postMark(body, res.locals.owner)
-    //     .then(result => {
-    //         if (result)
-    //             return Promise.resolve(rest.Response.fromSuccess());
-    //         else
-    //             return Promise.resolve(rest.Response.fromUnknownError());
-    //     });
+    if (!body)
+        return Promise.resolve(rest.Response.fromBadRequest('field_required', 'body required'));
+    if (!passwordh)
+        return Promise.resolve(rest.Response.fromBadRequest('field_required', 'passwordh required'));
 
     return db.marks.create(body, userRecord, passwordh)
         .then(mark => Promise.resolve(rest.Response.fromSuccess({ mark: mark._id })));

@@ -105,7 +105,7 @@ export function promiseResponseMiddlewareWrapper(debug: any) {
                 })
                 .catch(error => {
                     debug('error in middleware');
-                    if (debug) {
+                    if (error) {
                         debug(error);
                     }
                     res.status(STATUS.INTERNAL_SERVER_ERROR);

@@ -1,6 +1,8 @@
 import { Multihash, IPFSFile } from 'ipfs';
 import { IpfsPost } from '../models/IpfsPost';
+// const ipfsAPI = require('ipfs-api');
 const ipfsAPI = require('ipfs-api');
+const debug = require('debug')('mark:ipfs');
 
 const ip = '10.171.204.180';
 const port = 80;
@@ -8,31 +10,41 @@ const ipfsClient = new ipfsAPI(ip, port);
 
 // Adds an IpfsPost and returns its hash.
 export function addIpfsPost(post: IpfsPost): Promise<Multihash> {
+    debug('addIpfsPost');
+    debug('post', post);
 
-    return ipfsClient.files.add(Buffer.from(JSON.stringify(post)))
+    const bufString = Buffer.from(JSON.stringify(post));
+
+    return ipfsClient.files.add(bufString)
         .then((result: IPFSFile[]) => {
+            debug('ipfs result', result);
             return Promise.resolve(result[0].hash);
         });
 }
 
 // Returns the post with the given ipfs hash.
 export function getIpfsPost(hash: string): Promise<IpfsPost> {
+    debug('addIpfsPost');
+    debug('hash', hash);
 
     return ipfsClient.files.cat(hash)
-        .then((file: Buffer, err: Error) => {
+    .then((file: Buffer) => {
 
-            const json = JSON.parse(file.toString('utf8'));
-            const post: IpfsPost = new IpfsPost(json.author, json.time, json.content);
+        const json = JSON.parse(file.toString('utf8'));
+        debug('ipfs file (json)', json);
+        const post: IpfsPost = new IpfsPost(json.author, json.time, json.content);
 
-            return Promise.resolve(post);
-        });
+        return Promise.resolve(post);
+    });
 }
 
 export function getManyIpfsPosts(hashes: string[]): Promise<IpfsPost[]> {
     const promises: Promise<IpfsPost>[] = [];
-    hashes.forEach((value, index) => {
-        promises.push(getIpfsPost(value));
-    });
+
+    hashes.forEach((value, index) =>
+        promises.push(getIpfsPost(value))
+    );
+
     return Promise.all(promises);
 }
 

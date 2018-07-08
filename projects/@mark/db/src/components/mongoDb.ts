@@ -1,12 +1,11 @@
 import * as client from './mongo-client';
-import * as models from '../models';
 import * as mongo from 'mongodb';
-import { AccountInfo, Token } from '../models';
 const debug = require('debug')('mark:db');
 
 // Export types for convenience
 export type ICollection = mongo.Collection;
 export type IFilter<T = any> = mongo.FilterQuery<T>;
+// export type IQUeryOptions<T = any> = mongo.<T>;
 export type IAggregationCursor<T = any> = mongo.AggregationCursor<T>;
 export type ICursor<T = any> = mongo.Cursor<T>;
 
@@ -75,6 +74,8 @@ export interface CrudResult<T = any> {
 //     result: { ok: number, n: number };
 // }
 
+export type NextQueryDirection = '$gte' | '$lte';
+
 export class Collection<T> {
 
     protected collection: mongo.Collection;
@@ -112,6 +113,44 @@ export class Collection<T> {
     protected findMany(query: IFilter): Promise<T[]> {
         const cursor = this.collection.find(query);
         return selectPromise(cursor);
+    }
+
+    protected q<T>(query: IFilter<T>, options: any, sort?: any, limit?: number, nextField?: string, nextId?: string, nextDirection?: NextQueryDirection): Promise<{
+        items: T[],
+        nextId: string
+    }> {
+
+        debug('query', query, options, sort, limit, nextField);
+
+        const DEFAULT_LIMIT = 100;
+        let nextFieldValue: string;
+        limit = limit | DEFAULT_LIMIT;
+
+        debug('query', query, options, sort, limit, nextField, nextFieldValue);
+
+        // If next is specified, then use nextId as the new starting point in
+        // the specified direction (direction <= nextId || nextId <= direction)
+        if (nextId) {
+            query = {
+                ...(query as any),
+                [nextField]: { [nextDirection]: nextId }
+            };
+        }
+
+        const cursor = this.collection.find<T>(query, options);
+        debug('cursor', cursor);
+        return cursor
+            .limit(limit)
+            .sort(sort)
+            .next()
+            .then(nextDocument => {
+                nextFieldValue = (nextDocument as any)[nextField]; // assume _id
+                return cursor.toArray();
+            })
+            .then(items => Promise.resolve({
+                items,
+                nextId: nextFieldValue
+            }));
     }
 
     protected insertOne<T = any>(doc: T, options?: mongo.CollectionInsertOneOptions): Promise<T> {
