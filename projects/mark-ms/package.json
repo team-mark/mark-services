@@ -13,7 +13,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node server"
+    "start": "node server",
+    "install": "rm -f node_modules/web3/index.d.ts && rm -f node_modules/web3/types.d.ts"
   },
   "dependencies": {
     "@types/async": "^2.0.49",
