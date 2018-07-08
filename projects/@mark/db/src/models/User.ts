@@ -1,80 +1,9 @@
-// import { mongoDb } from '../components';
-// import Model, { IModelConsumer, IModelDb } from './Model';
-
-// const COLLECTION_NAME = 'users';
-
-// export interface IUserDb extends IModelDb {
-//     handle: string; // unique handle
-//     handleh: string; // handle hash
-//     wallet: string;
-//     owner: string;  // reference to account
-// }
-
-// export interface IUserConsumer extends IModelConsumer {
-//     handle: string;
-//     wallet: string;
-// }
-
-// export class User extends Model<IUserDb, IUserConsumer> {
-//     private users: mongoDb.ICollection;
-//     public indexes: mongoDb.CollectionIndex[] = [
-//         {
-//             key: {
-//                 handle: 1,
-//             },
-//             name: 'handle_index_v0',
-//             unique: true
-//         },
-//     ];
-
-//     public constructor() {
-//         super(COLLECTION_NAME);
-//         this.users = this.collection;
-//     }
-
-//     public static map(user: IUserDb): IUserConsumer {
-//         const mapped: IUserConsumer = {
-//             id: user._id.toString(),
-//             handle: user.handle,
-//             wallet: user.wallet,
-//         };
-//         return mapped;
-//     }
-
-//     public checkIfExists(handle: string): Promise<boolean> {
-//         // TODO: hash username and search
-//         const handleHash = handle;
-//         const filter: mongoDb.IFilter = { handleh: handle };
-//         return this.exists(filter);
-//     }
-
-//     public create(handle: string) {
-//         return this.checkIfExists(handle)
-//             .then(exists => {
-
-//             });
-//         // check if username exists.
-//         // get wallet
-//         // return user record with placeholder wallet value
-//         // return half-filled user record.
-//     }
-
-//     private createUserIfDoesNotExist(handle: string): Promise<IUserDb> {
-//         // return this.users.;
-//         return null;
-//     }
-
-//     public getByHandle(handle: string): Promise<IUserDb> {
-//         return null;
-//     }
-// }
 
 import { mongoDb, W3 } from '../components';
-// import { cryptoLib } from '@mark/utils';
 import Model, { IModelConsumer, IModelDb } from './Model';
 import { authentication } from '@mark/utils';
 const debug = require('debug')('mark:Account');
-
+import * as util from 'util';
 export interface IUserConsumer extends IModelConsumer {
     handle: string;
     // privateKeyH: string;
@@ -82,12 +11,17 @@ export interface IUserConsumer extends IModelConsumer {
     // link_a: string;
     // ref_a: string;
 }
+
+// update over in @mark/utils/rest if changes made here
 export interface IUserDb extends IModelDb {
     handle: string;
     refPK: string;
     address: string;
     linkI: string;
     refU: string;
+    followers: string[]; // list of handles
+    following: string[]; // list of handles
+    profilePicture: string;
 }
 
 export interface IEthereumAccount {
@@ -160,7 +94,10 @@ export class User extends Model<IUserDb, IUserConsumer> {
             // linkI,
             linkI: undefined,
             refU,
-            state
+            state,
+            followers: [],
+            following: [],
+            profilePicture: undefined
         };
 
         debug('user', user);
@@ -184,43 +121,76 @@ export class User extends Model<IUserDb, IUserConsumer> {
         // Also forced, outdated typings
         return (this.users.findOneAndUpdate(filter, update, options) as any as Promise<any>)
             .then((result: FindAndModifyWriteOpResultObject<IUserDb>) => {
-                debug(`Updating by ${filter}. Response: ${result}`);
+                debug(`Updating by ${util.inspect(filter, true, null)}. Response: ${util.inspect(result, true, null)}`);
                 return Promise.resolve(result.value);
             });
-        // .then(result => {
-        //     result.;
-        // });
-        // .then(result => { result.;});
-    }
-    // public create(handle: string, linkI: string, refA: string, linkR: string): Promise<IUserDb> {
-
-    //     const web3 = W3.getInstance();
-    //     const ethWallet = web3.eth.accounts.create();
-
-    //     return cryptoLib.hash(linkR, ethWallet.privateKey.length)
-    //         .then(hashedLinkR => {
-
-    //             const encryptedPrivateKey = cryptoLib.XORStrings(hashedLinkR, ethWallet.privateKey);
-    //             const account: IUserDb = {
-    //                 handle,
-    //                 privateKeyH: encryptedPrivateKey,
-    //                 publicKey: ethWallet.publicKey,
-    //                 address: ethWallet.address,
-    //                 linkI,
-    //                 refA,
-    //             };
-
-    //             return this.insertOne(account);
-    //         });
-
-    // }
-
-    public getByHandle(handle: string): Promise<IUserDb> {
-        return null;
     }
 
     public existsByHandle(handle: string) {
         const filter: mongoDb.IFilter<Partial<IUserDb>> = { handle };
         return this.exists(filter);
+    }
+
+    public getByHandle(handle: string) {
+        const filter: mongoDb.IFilter<IUserDb> = { handle };
+        return this.users.findOne<IUserDb>(filter);
+    }
+
+    public getManyByHandle(handles: string[]) {
+        const filter: mongoDb.IFilter<IUserDb> = { handle: { $in: handles } };
+        return this.findMany(filter);
+    }
+
+    public updateByHandle(handle: string, modifications: any) {
+        const filter: mongoDb.IFilter<IUserDb> = { handle };
+        return this.users.updateOne(filter, modifications)
+            .then(updateWriteOpResult => Promise.resolve());
+
+    }
+
+    public getFollowers(handle: string) {
+        return this.getByHandle(handle)
+            .then(account => Promise.resolve(account.followers));
+    }
+
+    public getFollowing(handle: string) {
+        return this.getByHandle(handle)
+            .then(account => Promise.resolve(account.following));
+    }
+
+    public addFollower(followerHandle: string, targetHandle: string) {
+        return this.getByHandle(targetHandle)
+            .then(account => {
+                if (!account) {
+                    return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
+                } else {
+                    const { followers } = account;
+                    const modifications = {
+                        followers: followers.concat(followerHandle)
+                    };
+                    return this.updateByHandle(targetHandle, modifications);
+                }
+            });
+    }
+
+    public removeFollower(followerHandle: string, targetHandle: string) {
+        return this.getByHandle(targetHandle)
+            .then(account => {
+                if (!account) {
+                    return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
+                } else {
+                    const { followers } = account;
+                    const modifications = {
+                        // filters specified follower handle (does not apply filter where f is not followerHandle)
+                        followers: followers.filter(f => f !== followerHandle)
+                    };
+                    return this.updateByHandle(targetHandle, modifications);
+                }
+            });
+    }
+
+    public updateProfilePicture(handle: string, url: string) {
+        const modifications: Partial<IUserDb> = { profilePicture: url };
+        return this.updateByHandle(handle, modifications);
     }
 }

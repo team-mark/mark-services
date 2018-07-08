@@ -16,13 +16,14 @@ export function submitMessage(message: string): Promise<BotMessageMetadata> {
 
         backbone.subscribe(responseChannel)
             .then(sub => {
-                sub.on('subscribe', (responseChannel: string, message: string) => {
+                sub.on('subscribe', (responseChannel: string, _message: string) => {
                     backbone.announce(channel, message);
                 });
 
                 sub.on('message', (responseChannel: string, message: string) => {
                     try {
                         const response: BotMessageMetadata = JSON.parse(message);
+                        console.log(response);
                         resolve(response);
                     } catch (e) {
                         reject(e);

@@ -53,7 +53,7 @@ const stats = (done, params) => {
 
 /* Debug */
 const debug = (done, params) => {
-    const debugScope = params.debug || 'droplit:*';
+    const debugScope = params.debug || process.env.DEBUG || 'mark:*';
     let { project } = params;
 
     if (project === undefined) {

@@ -1,5 +1,7 @@
 import * as express from 'express';
 import * as STATUS from 'http-status';
+const debug = require('debug')('mark:rest');
+// import * as db from '@mark/db';
 
 export interface ResponseReason {
     details: string;
@@ -60,8 +62,7 @@ export class Response {
         return restResponse;
     }
 
-    public static fromServerError(code?: string, reason?: string): Response {
-
+    public static fromUnknownError(code?: string, reason?: string): Response {
         code = code || 'server_error';
         reason = reason || 'internal server error';
         const body = { code, details: reason };
@@ -70,19 +71,41 @@ export class Response {
     }
 }
 
+// update over in Model.ts if changes made here
+export interface IModelDb {
+    // from imodeldb
+    _id?: any;
+    environment?: string;
+    state?: string;
+    createdAt?: Date;
+    // --
+}
+
+// update over in User.ts if changes made here
+export interface IUserDb extends IModelDb {
+    handle: string;
+    refPK: string;
+    address: string;
+    linkI: string;
+    refU: string;
+    followers: string[]; // list of handles
+    following: string[]; // list of handles
+    profilePicture: string;
+}
+
 export function promiseResponseMiddlewareWrapper(debug: any) {
     // debug('generating middleware');
     return (promiseMiddleware: (req: express.Request, res: express.Response, next: express.NextFunction) => Promise<Response>): express.RequestHandler => {
-        return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+        return (req: express.Request & { user: IUserDb }, res: express.Response, next: express.NextFunction) => {
             // debug('generating middleware');
             promiseMiddleware(req, res, next)
                 .then(restResponse => {
-                    // debug('responding to middleware');
+                    debug('responding to middleware', restResponse);
                     restResponse.send(res);
                 })
                 .catch(error => {
-                    // debug('error in middleware');
-                    if (debug) {
+                    debug('error in middleware');
+                    if (error) {
                         debug(error);
                     }
                     res.status(STATUS.INTERNAL_SERVER_ERROR);

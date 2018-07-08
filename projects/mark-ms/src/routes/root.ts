@@ -6,15 +6,19 @@ const api: express.Router = express.Router();
 
 const currentVersion = 'v0';
 
+const accounts = require(`../services/${currentVersion}/api/accounts`);
+const feed = require(`../services/${currentVersion}/api/feed`);
+const likes = require(`../services/${currentVersion}/api/likes`);
+const marks = require(`../services/${currentVersion}/api/marks`);
 const tokens = require(`../services/${currentVersion}/api/tokens`);
 const users = require(`../services/${currentVersion}/api/users`);
-const accounts = require(`../services/${currentVersion}/api/accounts`);
-const marks = require(`../services/${currentVersion}/api/marks`);
 
-api.use('/users', users);
-api.use('/tokens', tokens);
 api.use('/accounts', accounts);
+api.use('/feed', feed);
+api.use('/likes', likes);
 api.use('/marks', marks);
+api.use('/tokens', tokens);
+api.use('/users', users);
 
 router.use(`/api`, api);
 router.use(`/api/${currentVersion}`, api);

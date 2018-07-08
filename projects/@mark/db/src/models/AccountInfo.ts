@@ -36,4 +36,9 @@ export class AccountInfo extends Model<IAccountInfoDb, IAccountInfoConsumer> {
         const filter: mongoDb.IFilter<Partial<IAccountInfoDb>> = { phoneh };
         return this.exists(filter);
     }
+
+    public existsByRefI(refI: string) {
+        const filter: mongoDb.IFilter<Partial<IAccountInfoDb>> = { refI };
+        return this.exists(filter);
+    }
 }

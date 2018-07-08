@@ -1,32 +1,30 @@
 // Database Interface for the Marks (Post) collection
 import { bots } from '@mark/data-utils';
-import { mongoDb } from '../components';
-import * as mongo from 'mongodb';
+import { authentication } from '@mark/utils';
+import * as db from '../../';
+import { mongoDb, ipfs } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
+import { User } from './User';
+import { IpfsPost } from './IpfsPost';
+import { EthereumPost } from './EthereumPost';
+import { addIpfsPost, getManyIpfsPosts } from '../components/ipfs';
+import { IUserDb } from './User';
+import { ethereum } from '../components';
+
+const debug = require('debug')('mark:Mark');
 
 export interface IMarkConsumer extends IModelConsumer {
-    // id: string;
     ethereum_id: string;
-<<<<<<< HEAD
-    // createdAt: Date;
-    score?: number;
-    // likes: number;
-    // dislikes: number;
-=======
+    owner: string;
     body: string;
-    score: number;
->>>>>>> 870914a38cadce6e06e740cfaea207a4b4087815
+    score?: number;
 }
+
 export interface IMarkDb extends IModelDb {
     // id: mongo.ObjectID;
+    owner: string;
     ethereum_id: string;
-<<<<<<< HEAD
-    // likes: mongo.ObjectID[];
-    // dislikes: mongo.ObjectID[];
-    // time: Date;
-=======
-    body: string;
->>>>>>> 870914a38cadce6e06e740cfaea207a4b4087815
+    ipfs_id: string;
 }
 
 const COLLECTION_NAME = 'marks';
@@ -69,36 +67,200 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     }
 
     public static map(mark: IMarkDb): IMarkConsumer {
-        // const numLikes = mark.likes.length;
-        // const numDislikes = mark.dislikes.length;
-        // const _score = Mark.calculatePopularity(numLikes,
-        //     numLikes + numDislikes,
-        //     mark.time);
-
         const mapped: IMarkConsumer = {
             id: mark._id.toString(),
             ethereum_id: mark.ethereum_id,
-            // likes: mark.likes.length,
-            // dislikes: mark.dislikes.length,
-            // score: _score,
-            // time: mark.time
+            body: null,
+            owner: null,
+            createdAt: mark.createdAt.toDateString(),
         };
 
         return mapped;
     }
 
-    public retrieveMarks(): Promise<IMarkDb[]> {
-        const filter: mongoDb.IFilter<IMarkDb> = {};
-        return this.findMany({});
+    // Assembles IMarkConsumers given a list of MongoDb Mark documents
+    private static assembleMarks(marks: IMarkDb[]): Promise<IMarkConsumer[]> {
+        const hashes: string[] = [];
+        const consumer: IMarkConsumer[] = [];
+
+        marks.forEach((mark, index) => {
+            hashes.push(mark.ethereum_id);
+            consumer.push(Mark.map(mark));
+        });
+
+        return getManyIpfsPosts(hashes)
+            .then(ipfs_posts => {
+                for (let i = 0; i < ipfs_posts.length; i++) {
+                    consumer[i].body = ipfs_posts[i].content;
+                    consumer[i].owner = ipfs_posts[i].author;
+                }
+                return Promise.resolve(consumer);
+            });
     }
 
-    public postMark(content: string): Promise<IMarkDb> {
-        return bots.submitMessage(content)
-            .then(meta => {
+    /**
+     * Returns Marks by time created
+     * @param sort      -1 for descending sort 1 for ascending sort
+     * @param skip      Number of records to skip
+     * @param size      Number of records to return
+    */
+    public getMarks(sort: number, skip: number, size: number, query?: mongoDb.IFilter): Promise<IMarkConsumer[]> {
+        const cursor: mongoDb.ICursor<IMarkDb> = this.collection.find(query);
 
-                const mark: IMarkDb = {
-                    ethereum_id: ''
-                };
+        if (sort === 1 || sort === -1)
+            cursor.sort({ createdAt: sort });
+        cursor.skip(skip);
+        cursor.limit(size);
+
+        return cursor.toArray()
+            .then(marks => {
+                return Mark.assembleMarks(marks);
+            }, error => {
+                console.log(error);
+                return Promise.reject(new Error('Internal error'));
+            });
+    }
+
+    public getMarksAggregate(query: mongoDb.IFilter<IMarkDb>[], skip?: number, size?: number): Promise<IMarkConsumer[]> {
+        const cursor: mongoDb.IAggregationCursor<IMarkDb> = this.aggregate(query);
+
+        if (skip)
+            cursor.skip(skip);
+        if (size)
+            cursor.limit(size);
+
+        return cursor.toArray()
+            .then(marks => {
+                return Mark.assembleMarks(marks);
+            });
+    }
+
+    /**
+     *
+     * @param handle
+     * @param opts
+     */
+    public listFeed(
+        handle: string,
+        opts?: {
+            limit?: number,
+            nextField?: string
+            nextId?: string
+            nextDirection?: mongoDb.NextQueryDirection
+        }): Promise<{
+            items: IMarkConsumer[],
+            nextId: string,
+        }> {
+
+        debug('listFeed');
+
+        const DEFAULT_LIMIT = 100;
+
+        const filter = { owner: handle, };
+        const options = {};
+        const sort = {};
+        const { limit, nextDirection, nextField, nextId } = opts;
+
+        let consumableMarks: IMarkConsumer[] = [];
+
+        debug('about to query');
+
+        return db.marks.q<IMarkDb>(
+            filter,
+            options,
+            sort,
+            limit,
+            nextField,
+            nextId,
+            nextDirection
+        )
+            .then(marksMeta => {
+
+                debug('markMeta');
+                const { nextId } = marksMeta;
+                consumableMarks = marksMeta.items as any;
+
+                const hashes = marksMeta.items.map(m => m.ipfs_id);
+
+                return ipfs.getManyIpfsPosts(hashes)
+                    .then(ipfsPosts => {
+
+                        debug('ipfsPosts');
+
+                        // Update consumable marks content
+                        ipfsPosts.forEach((post, index) => {
+                            consumableMarks[index].body = post.content;
+                        });
+
+                        return Promise.resolve({
+                            items: consumableMarks,
+                            nextId
+                        });
+                    });
+
+            })
+            .catch(error => debug(error));
+    }
+
+    public getByOwner(handle: string): Promise<IMarkDb[]> {
+        const filter = { owner: handle };
+        return db.marks.findMany(filter);
+    }
+
+    /**
+     * Post mark to IPFS, Ethereum, and Mark.
+     * @param content post content
+     * @param user user record
+     * @param passwordh password hash
+     */
+    public create(content: string, user: IUserDb, passwordh: string): Promise<IMarkDb> {
+        // 1. get Ethereum private key
+        // 1. get Ethereum private key
+        // 2. post to IPFS
+        // 3. post to Ethereum
+        // 4. record entry in Mongo
+
+        debug('new content being created');
+        debug('content', content);
+        debug('user', user);
+        debug('passwordh', passwordh);
+
+        const { handle, refPK, _id, address } = user;
+        const post = new IpfsPost(handle, new Date(), content);
+
+        const userId = User.mapId(_id);
+
+        const mark: IMarkDb = {
+            owner: handle,
+            // filled in below
+            ethereum_id: undefined,
+            ipfs_id: undefined
+        };
+
+        // bots.submitMessage(content)
+        //     .then(() => authentication.getLinkPK(userId, handle, passwordh))
+        return authentication.getLinkPK(userId, handle, passwordh)
+            .then(linkPK => {
+
+                debug('linkPK', linkPK);
+                const privateKey = authentication.getPrivateKey(linkPK, refPK);
+                debug('privateKey', privateKey);
+
+                // TODO: Add in bots.submitMessage
+                return addIpfsPost(post)
+                    .then(ipfsHash => {
+                        debug('ipfsHash', ipfsHash);
+
+                        mark.ipfs_id = ipfsHash;
+
+                        const ethPost = new EthereumPost(ipfsHash);
+                        return ethereum.addEthereumPost(ethPost, address, privateKey);
+                    });
+            })
+            .then(txHash => {
+                debug('txHash', txHash);
+
+                mark.ethereum_id = txHash;
 
                 return this.insertOne(mark);
             });

@@ -13,7 +13,14 @@ const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
 // Routes
 router.route('/:handle')
-    .get(authBasic, verify, respond(getAccount));
+    .get(authBasic, verify, respond(getAccount))
+    .all(rest.notAllowed);
+// router.route('/:handle/marks')
+//     .get(authBasic, verify, respond(getAccount))
+//     .all(rest.notAllowed);
+// router.route('/:handle/marks/:id')
+//     .get(authBasic, verify, respond(getAccount))
+//     .all(rest.notAllowed);
 
 // Route definitions
 function getAccount(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {

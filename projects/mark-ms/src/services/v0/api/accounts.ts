@@ -2,9 +2,14 @@ import * as async from 'async';
 import * as db from '@mark/db';
 import * as express from 'express';
 import { auth, redisConnect, token } from '@mark/data-utils';
-import { sns } from '../../../utils';
-import { cryptoLib, rest, authentication } from '@mark/utils';
+import { sns, s3 } from '../../../utils';
+import { authentication, cryptoLib, rest } from '@mark/utils';
 import * as STATUS from 'http-status';
+import * as multer from 'multer';
+import { IUserDb } from '@mark/db';
+
+const UPLOAD_PATH = 'uploads';
+const upload = multer({ dest: `${UPLOAD_PATH}/` }); // multer configuration
 
 const router = express.Router();
 const debug = require('debug')('mark:accounts');
@@ -15,8 +20,14 @@ const { verify } = rest;
 const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
 // Routes
+router.route('/info')
+    .get(authBasic, verify, respond(info))
+    .all(notAllowed);
 router.route('/login')
-    .post(authBasic, verify, respond(login))
+    .post(verify, respond(login))
+    .all(notAllowed);
+router.route('/check-handle-availability')
+    .post(authAnon, verify, respond(checkHandleAvailability))
     .all(notAllowed);
 router.route('/signup')
     .post(authAnon, verify, respond(signup))
@@ -24,14 +35,87 @@ router.route('/signup')
 router.route('/signup-validate')
     .post(authAnon, verify, respond(signupValidate))
     .all(notAllowed);
-router.route('/check-handle-availability')
-    .post(authAnon, verify, respond(checkHandleAvailability))
+router.route('/update-profile-picture')
+    .post(authBasic, verify, upload.single('profile-picture'), respond(uploadProfilePicture))
     .all(notAllowed);
 
 // Route definitions
 function login(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    // res.send({ username: 'ferrantejake' });
-    return null;
+    const { handle, passwordh, key: OTP } = req.body;
+    let userRecord: db.IUserDb;
+
+    if (!handle)
+        return Promise.resolve(rest.Response.fromBadRequest('field_required', 'handle required'));
+    if (!passwordh)
+        return Promise.resolve(rest.Response.fromBadRequest('field_required', 'passwordh required'));
+    if (!OTP)
+        return Promise.resolve(rest.Response.fromBadRequest('field_required', 'key required'));
+
+    debug('login:', handle, passwordh);
+
+    return Promise.all([
+        db.users.getByHandle(handle),
+        cryptoLib.hashPassword(passwordh)
+    ])
+        .then(([_userRecord, passHash]) => {
+            userRecord = _userRecord;
+
+            debug('userRecord', userRecord);
+            const { refU, address, _id } = userRecord;
+            const userId = _id.toHexString();
+
+            return authentication.getRefI(refU, address, passHash);
+        })
+        .then(refI => {
+            debug('refI', refI);
+            return db.accountInfo.existsByRefI(refI);
+        })
+        .then(exists => {
+            if (exists) {
+
+                const { refU, address, _id } = userRecord;
+                const userId = _id.toHexString();
+
+                return Promise.all([
+                    authentication.getLinkQ(handle, passwordh, OTP),
+                    authentication.getRefU(userId, handle, passwordh)
+                ])
+                    .then(([linkQ, refU]) => {
+                        return Promise.all([
+                            authentication.getRefT(handle, passwordh, OTP),
+                            authentication.getLinkA(linkQ, refU)
+                        ]);
+                    })
+                    .then(([refT, linkA]) => {
+                        return db.tokens.whitelist(refT, linkA, handle);
+                    });
+            } else {
+                return Promise.reject(rest.Response.fromBadRequest('invalid_login', 'invalid handle or password'));
+            }
+        })
+        .then(tokenRecord => {
+            debug('created token', tokenRecord.token);
+
+            const response = rest.Response.fromSuccess(db.Token.mapForConsumer(tokenRecord));
+            return Promise.resolve(response);
+        })
+        .catch((errorOrResponse: Error | rest.Response) => {
+            debug('errorOrResponse', errorOrResponse);
+            if ((errorOrResponse as Object).constructor === Error) {
+                // error type, response with 500;
+                return Promise.resolve(rest.Response.fromUnknownError());
+
+            } else {
+                // planned rejection, respond with rejection
+                if ((errorOrResponse as rest.Response).status === STATUS.INTERNAL_SERVER_ERROR) {
+
+                    return Promise.resolve(rest.Response.fromUnknownError());
+                } else {
+                    return Promise.resolve(errorOrResponse as rest.Response);
+                }
+            }
+        });
+
 }
 /**
  *
@@ -40,6 +124,10 @@ function login(req: express.Request, res: express.Response, next: express.NextFu
  * @param next
  * references: https://en.wikipedia.org/wiki/PBKDF2
  */
+function info(req: express.Request & { user: IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+    const { userRecord } = res.locals;
+    return Promise.resolve(rest.Response.fromSuccess(db.User.map(userRecord)));
+}
 function signup(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     debug('signup', req.query);
     // 1.   Get hashes of items
@@ -106,14 +194,15 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                             debug('refA', refU);
                             return db.users.create(userId, handle, refU, linkPK, state);
                         })
-                        .then(accountRecord => {
-                            const { address: walletAddress } = accountRecord;
+                        .then(userRecord => {
+                            const { address: walletAddress } = userRecord;
 
                             return authentication.getRefI(refU, walletAddress, passh)
                                 .then(refI => {
 
                                     const linkI = authentication.getLinkI(linkR, refI);
                                     const modifications = {
+                                        ...userRecord,
                                         linkI
                                     };
 
@@ -190,7 +279,7 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                                                         debug('error', error);
                                                         debug('get: accountInfoReply', accountInfoReply);
                                                         debug('get: accountReply', accountReply);
-                                                        return reject(rest.Response.fromServerError());
+                                                        return reject(rest.Response.fromUnknownError());
                                                     }
 
                                                     // otherwise the values are open. continue.
@@ -223,7 +312,7 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                                                             debug('error', error);
                                                             debug('get: accountInfoReply', accountInfoReply);
                                                             debug('get: accountReply', accountReply);
-                                                            return reject(rest.Response.fromServerError());
+                                                            return reject(rest.Response.fromUnknownError());
                                                         }
 
                                                         // cryptoLib.hash(userId, authentication.DEFAULT_HASH_RATE, handle)
@@ -269,8 +358,8 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                             db.accountInfo.deleteByState(state),
                             db.tokens.deleteByState(state),
                         ])
-                            .then(() => Promise.resolve(rest.Response.fromServerError()))
-                            .catch(() => Promise.resolve(rest.Response.fromServerError()));
+                            .then(() => Promise.resolve(rest.Response.fromUnknownError()))
+                            .catch(() => Promise.resolve(rest.Response.fromUnknownError()));
 
                     } else {
                         // planned rejection, respond with rejection
@@ -281,8 +370,8 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                                 db.accountInfo.deleteByState(state),
                                 db.tokens.deleteByState(state),
                             ])
-                                .then(() => Promise.resolve(rest.Response.fromServerError()))
-                                .catch(() => Promise.resolve(rest.Response.fromServerError()));
+                                .then(() => Promise.resolve(rest.Response.fromUnknownError()))
+                                .catch(() => Promise.resolve(rest.Response.fromUnknownError()));
                         } else {
                             return Promise.resolve(errorOrResponse as rest.Response);
                         }
@@ -311,9 +400,12 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
         ])
             .then(([hashedKey, redisClient]) => {
 
+                debug(hashedKey, 'hashedKey');
+                debug(accountInfoKey, 'accountInfoKey');
+
                 redisClient.get(accountInfoKey, (error: Error, reply: string) => {
                     if (error) {
-                        return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+                        return resolve(rest.Response.fromUnknownError('internal_error', 'unable to service request'));
                     }
                     if (!reply) {
                         return resolve(rest.Response.fromBadRequest('invalid_session', 'could not identify signup session'));
@@ -324,7 +416,7 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
                         accountInfo = JSON.parse(reply);
                     } catch (e) {
                         debug(e);
-                        return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+                        return resolve(rest.Response.fromUnknownError('internal_error', 'unable to service request'));
                     }
 
                     let roll1Mod = parseInt(roll1, 16) % 100;
@@ -379,7 +471,7 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
                             redisClient.get(accountKey, (error: Error, reply: string) => {
                                 if (error) {
                                     debug(error);
-                                    return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+                                    return resolve(rest.Response.fromUnknownError('internal_error', 'unable to service request'));
                                 }
                                 if (!reply) {
                                     return resolve(rest.Response.fromBadRequest('invalid_session', 'could not identify signup session'));
@@ -392,7 +484,7 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
                                     accountInfo = JSON.parse(reply);
                                 } catch (e) {
                                     debug(e);
-                                    return resolve(rest.Response.fromServerError('internal_error', 'unable to service request'));
+                                    return resolve(rest.Response.fromUnknownError('internal_error', 'unable to service request'));
                                 }
                                 const { userId, handle, passwordh } = accountInfo;
 
@@ -404,7 +496,7 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
                                     .then(([refT, linkQ, refU]) => {
                                         const linkA = authentication.getLinkA(linkQ, refU);
 
-                                        db.tokens.whitelist(refT, linkA)
+                                        db.tokens.whitelist(refT, linkA, handle)
                                             .then(authToken => {
 
                                                 resolve(rest.Response.fromSuccess({ token: authToken.token }));
@@ -435,4 +527,26 @@ function checkHandleAvailability(req: express.Request, res: express.Response, ne
                 return rest.Response.fromNotFound();
             }
         });
+}
+
+export type MulterFile = {
+    fieldname: string;
+    originalname: string;
+    encoding: string;
+    mimetype: string;
+    size: number;
+    destination: string;
+    filename: string;
+    path: string;
+    buffer: Buffer;
+};
+
+function uploadProfilePicture(req: express.Request & { file: s3.MulterFile, user: db.IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+    const { file, user } = req;
+    const { handle } = user;
+
+    return s3.uploadFile(file)
+        .then(fileUrl => db.users.updateProfilePicture(handle, fileUrl)
+            .then(() => rest.Response.fromSuccess({ url: fileUrl }))
+        );
 }
