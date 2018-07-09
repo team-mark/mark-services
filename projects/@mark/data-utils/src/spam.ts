@@ -33,4 +33,4 @@ export function submitMessage(message: string): Promise<BotMessageMetadata> {
     });
 }
 
-export function awaitMessage()
+// export function awaitMessage()

@@ -41,8 +41,11 @@ def run_model(q, stop, predict_fn, word2id, red):
             # remove extra dimension
             ids = ids[0]
 
+            # favorite_count, num_hashtags, num_urls, reply_count
+            attributes = [0, 0, 0, 0]
+
             # model expects dict below
-            inputs = {'x': ids, 'len':length}
+            inputs = {'text': ids, 'len':length, 'attributes': attributes}
 
             predictions = predict_fn(inputs)
 
@@ -66,18 +69,18 @@ def run_model(q, stop, predict_fn, word2id, red):
 
 def main(argv):
     try:
-        opts, args = getopt.getopt(argv, "h:pw:p:", ['host=', 'password=', 'port='])
+        opts, args = getopt.getopt(argv, "h:s:p:", ['host=', 'password=', 'port='])
     except getopt.GetoptError as err:
         print('mark_ai_service.py -ip <ip address> -pw <password> -port <port>')
         print(err)
         sys.exit(2)
 
     for opt, arg in opts:
-        if opt == "-ip":
+        if opt == "-h" or opt == "--host":
             CONFIG['host'] = arg
-        elif opt == "-pw":
+        elif opt == "-s" or opt == "--password":
             CONFIG['password'] = arg
-        elif opt == "-port":
+        elif opt == "-p" or opt == "--port":
             CONFIG['port'] = arg
 
     if CONFIG['host'] == None or CONFIG['password'] == None or CONFIG['port'] == None:
@@ -88,8 +91,8 @@ def main(argv):
     red = redis.StrictRedis(**CONFIG)
     stop = Event()
     q = queue.Queue()
-    word2id, _ = i_data.load_embeddings("../../embeddings/glove.twitter.27B.25d.txt")
-    predict_fn = predictor.from_saved_model('../../models/bot_detection')
+    word2id, _ = i_data.load_embeddings("./projects/mark-ai/embeddings/glove.twitter.27B.25d.txt")
+    predict_fn = predictor.from_saved_model('./projects/mark-ai/models/bot_detection')
     thread = Thread(target=run_model, kwargs=dict(
                                                 stop=stop,  # Thread Stop signal  
                                                 q=q,        # Queue of Marks to run through predict_fn
@@ -103,7 +106,7 @@ def main(argv):
     sub.psubscribe(CHANNEL)
 
     print("Loaded... listening on channel", CHANNEL)
-
+    sys.stdout.flush()
     # TODO: figure out some way to kill it
     while(True):
        for item in sub.listen():

@@ -1,6 +1,7 @@
 import * as express from 'express';
 import * as path from 'path';
 import { localconfig } from './utils';
+import * as bot from './worker/bot-worker';
 localconfig.setup();
 
 const cors = require('cors');
@@ -10,6 +11,8 @@ const bodyParser = require('body-parser');
 const routes = require('./routes');
 
 const app = express();
+
+bot.init();
 
 // Enable CORS for all endpoints
 app.use(cors());

@@ -24,7 +24,7 @@ export function addIpfsPost(post: IpfsPost): Promise<Multihash> {
 
 // Returns the post with the given ipfs hash.
 export function getIpfsPost(hash: string): Promise<IpfsPost> {
-    debug('addIpfsPost');
+    debug('getIpfsPost');
     debug('hash', hash);
 
     return ipfsClient.files.cat(hash)

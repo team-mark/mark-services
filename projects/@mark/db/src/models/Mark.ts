@@ -265,4 +265,8 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                 return this.insertOne(mark);
             });
     }
+
+    public update(query: mongoDb.IFilter, update: mongoDb.IFilter) {
+        this.collection.updateOne(query, update);
+    }
 }
