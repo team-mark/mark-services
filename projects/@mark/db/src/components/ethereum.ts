@@ -23,7 +23,7 @@ export function addEthereumPost(post: EthereumPost, address: string, key: string
     return new Promise((resolve, reject) => {
         createRawTx(post, address, key)
             .then((rawTxData: string) => {
-                return getInstance().eth.sendRawTransaction(rawTxData, (error, transactionHash) => {
+                return getInstance().eth.sendSignedTransaction(rawTxData, (error, transactionHash) => {
                     if (error) {
                         reject(error);
                     } else {
