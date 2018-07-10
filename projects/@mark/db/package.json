@@ -7,6 +7,11 @@
   "private": true,
   "author": "Jake Ferrante",
   "license": "MIT",
+  "scripts": {
+    "start": "node server",
+    "install-windows": "del /f node_modules/web3/index.d.ts && del /f node_modules/web3/types.d.ts",
+    "install": "rm -f node_modules/web3/index.d.ts && rm -f node_modules/web3/types.d.ts"
+  },
   "dependencies": {
     "@types/bn.js": "^4.11.1",
     "@types/ipfs": "git+https://github.com/survirtual/types-ipfs.git",
