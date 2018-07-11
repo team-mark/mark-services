@@ -20,7 +20,7 @@ export interface ILikeSorted extends IModelConsumer {
 const COLLECTION_NAME = 'likes';
 
 export class Like extends Model<ILikeDb, ILikeConsumer> {
-    private likes: mongoDb.ICollection;
+    private likes: mongoDb.ICollection<ILikeDb>;
 
     public constructor() {
         super(COLLECTION_NAME);
