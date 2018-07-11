@@ -10,7 +10,7 @@ import { EthereumPost } from '../models/EthereumPost';
 import { getInstance } from './web3';
 import { resolve } from 'url';
 
-const txValue = 1;
+const txValue = 1; // Value in 'Wei'. 1 Wei = 1x10^-18 Ether
 const txGasPrice = 1;
 const ethChainId = 112358;
 
@@ -157,29 +157,22 @@ function createSignedPostTx(post: EthereumPost, address: string, privateKey: str
 
 /**
  *
- * @param post item being posted
- * @param address address (wallet) being posted with
- * @param privateKey address' private key
+ * @param amount amount of Ether to be transferred
+ * @param to address (wallet) to send Ether to
+ * @param from address (wallet) to send Ether from
+ * @param privateKey froms private key
  */
 function createSignedFundingTx(amount: number, to: string, from: string, privateKey: string): Promise<string> {
 
-    const data = {
-        message: 'funds initiation from Mark administration'
-    };
-    const inputData: string = getInstance().utils.toHex(JSON.stringify(data));
-
-    const txGas = 21000 + (68 * (inputData.length / 2));
+    const txGas = 21000;
 
     const tx: Transaction = {
         to,
         from,
-        value: amount,
+        value: getInstance().utils.toWei(amount.toString(), 'ether'),
         gas: txGas,
         gasPrice: txGasPrice,
         chainId: ethChainId, // chainId is not in transaction structure per typings (web3 expects it);
-        data: inputData
-        // 'from' automatically set to address
-        // 'nonce' automatically calculated
     } as any;
 
     return getInstance().eth.accounts.signTransaction(tx, privateKey)
@@ -197,53 +190,4 @@ function createSignedFundingTx(amount: number, to: string, from: string, private
             }
         });
 
-}
-
-/**
- * Sends Ether from one wallet to another
- * @param amount amount of Ether to be transferred
- * @param toAddress address (wallet) to send Ether to
- * @param fromAddress address (wallet) to send Ether from
- * @param privateKey fromAddress' private key
- */
-export function sendEther(amount: number, toAddress: string, fromAddress: string, privateKey: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        createRawSendTx(amount, toAddress, fromAddress, privateKey)
-            .then((rawTxData: string) => {
-                return getInstance().eth.sendSignedTransaction(rawTxData, (error, transactionHash) => {
-                    if (error) {
-                        reject(error);
-                    } else {
-                        resolve(transactionHash);
-                    }
-                });
-            });
-    });
-}
-
-function createRawSendTx(amount: number, toAddress: string, fromAddress: string, privateKey: string): Promise<string> {
-
-    const tx: Transaction = {
-        to: toAddress,
-        from: fromAddress,
-        value: getInstance().utils.toWei(amount.toString(), 'ether'),
-        gas: 21000,
-        gasPrice: txGasPrice,
-        chainId: ethChainId,
-    } as any;
-
-    return getInstance().eth.accounts.signTransaction(tx, privateKey)
-        .then(signedTx => {
-
-            try {
-                // Format the signed transaction
-                const validJson = JSON.stringify(signedTx);
-                const rawTx = JSON.parse(validJson).rawTransaction;
-
-                return Promise.resolve(rawTx);
-
-            } catch (error) {
-                return Promise.reject(error);
-            }
-        });
 }
