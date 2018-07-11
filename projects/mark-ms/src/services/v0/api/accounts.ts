@@ -26,6 +26,9 @@ router.route('/info')
 router.route('/login')
     .post(verify, respond(login))
     .all(notAllowed);
+router.route('/logout')
+    .post(verify, respond(logout))
+    .all(notAllowed);
 router.route('/check-handle-availability')
     .post(authAnon, verify, respond(checkHandleAvailability))
     .all(notAllowed);
@@ -40,6 +43,20 @@ router.route('/update-profile-picture')
     .all(notAllowed);
 
 // Route definitions
+
+function logout(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+    const { tokenRecord } = res.locals as auth.BasicAuthFields;
+
+    if (!tokenRecord)
+        return Promise.resolve(rest.Response.fromBadRequest('field_required', 'token required'));
+
+    return db.tokens.deletebyToken(tokenRecord.token)
+        .then(deleteResult => {
+            if (deleteResult.result.ok) {
+                return Promise.resolve(rest.Response.fromSuccess());
+            }
+        });
+}
 function login(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     const { handle, passwordh, key: OTP } = req.body;
     let userRecord: db.IUserDb;
