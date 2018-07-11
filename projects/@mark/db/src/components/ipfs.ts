@@ -28,14 +28,14 @@ export function getIpfsPost(hash: string): Promise<IpfsPost> {
     debug('hash', hash);
 
     return ipfsClient.files.cat(hash)
-    .then((file: Buffer) => {
+        .then((file: Buffer) => {
 
-        const json = JSON.parse(file.toString('utf8'));
-        debug('ipfs file (json)', json);
-        const post: IpfsPost = new IpfsPost(json.author, json.time, json.content);
+            const json = JSON.parse(file.toString('utf8'));
+            debug('ipfs file (json)', json);
+            const post: IpfsPost = new IpfsPost(json.author, json.time, json.content);
 
-        return Promise.resolve(post);
-    });
+            return Promise.resolve(post);
+        });
 }
 
 export function getManyIpfsPosts(hashes: string[]): Promise<IpfsPost[]> {

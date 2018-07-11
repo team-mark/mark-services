@@ -12,7 +12,7 @@ export interface IAccountInfoDb extends IModelDb {
 const COLLECTION_NAME = 'accountInfo';
 
 export class AccountInfo extends Model<IAccountInfoDb, IAccountInfoConsumer> {
-    private accounts: mongoDb.ICollection;
+    private accounts: mongoDb.ICollection<IAccountInfoDb>;
 
     public constructor() {
         super(COLLECTION_NAME);

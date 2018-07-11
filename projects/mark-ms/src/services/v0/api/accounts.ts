@@ -24,7 +24,10 @@ router.route('/info')
     .get(authBasic, verify, respond(info))
     .all(notAllowed);
 router.route('/login')
-    .post(verify, respond(login))
+    .post(authAnon, verify, respond(login))
+    .all(notAllowed);
+router.route('/logout')
+    .post(authAnon, verify, respond(logout))
     .all(notAllowed);
 router.route('/check-handle-availability')
     .post(authAnon, verify, respond(checkHandleAvailability))
@@ -40,6 +43,23 @@ router.route('/update-profile-picture')
     .all(notAllowed);
 
 // Route definitions
+
+function logout(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+    // const { tokenRecord } = res.locals as auth.BasicAuthFields;
+
+    const token = req.get('Authorization');
+    console.log(res.locals);
+
+    if (!token)
+        return Promise.resolve(rest.Response.fromSuccess());
+
+    return db.tokens.deletebyToken(token)
+        .then(deleteResult => {
+            if (deleteResult.result.ok) {
+                return Promise.resolve(rest.Response.fromSuccess());
+            }
+        });
+}
 function login(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     const { handle, passwordh, key: OTP } = req.body;
     let userRecord: db.IUserDb;
@@ -58,6 +78,9 @@ function login(req: express.Request, res: express.Response, next: express.NextFu
         cryptoLib.hashPassword(passwordh)
     ])
         .then(([_userRecord, passHash]) => {
+            if (!_userRecord) {
+                return Promise.reject(rest.Response.fromNotFound());
+            }
             userRecord = _userRecord;
 
             debug('userRecord', userRecord);
@@ -391,6 +414,7 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
     // accountInfoKey = hash(accountId, handle) walk (roll3 times)
 
     const accountInfoKey = `signup:accountInfo:${state}.${code}`;
+    // let
 
     return new Promise((resolve, reject) => {
 
@@ -499,8 +523,9 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
                                         db.tokens.whitelist(refT, linkA, handle)
                                             .then(authToken => {
 
-                                                resolve(rest.Response.fromSuccess({ token: authToken.token }));
-
+                                                db.users.fundUserAccount(handle)
+                                                    .then(() => resolve(rest.Response.fromSuccess({ token: authToken.token })))
+                                                    .catch(reject);
                                             });
                                     });
 

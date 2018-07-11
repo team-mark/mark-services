@@ -15,12 +15,12 @@ const respond = rest.promiseResponseMiddlewareWrapper(debug);
 // Routes
 router.route('/')
     .get(authBasic, verify, respond(listMarks))
-    //.post(authBasic, verify, respond(markPost))
+    .post(authBasic, verify, respond(postMark))
     // .put(authBasic, verify, respond(reviseMark))
     .all(notAllowed);
 
 function listMarks(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-return null;
+    return null;
 }
 
 function markFetch(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
@@ -70,7 +70,7 @@ function markFetch(req: express.Request, res: express.Response, next: express.Ne
     });
 }
 
-function markPost(req: express.Request, res: express.Response & auth.BasicAuthFields, next: express.NextFunction): Promise<rest.Response> {
+function postMark(req: express.Request, res: express.Response & auth.BasicAuthFields, next: express.NextFunction): Promise<rest.Response> {
     // add in input checks
     const { body, passwordh } = req.body;
     const { userRecord }: auth.BasicAuthFields = res.locals;

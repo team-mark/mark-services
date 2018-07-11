@@ -1,9 +1,10 @@
 import * as client from './mongo-client';
 import * as mongo from 'mongodb';
 const debug = require('debug')('mark:db');
+import * as util from 'util';
 
 // Export types for convenience
-export type ICollection = mongo.Collection;
+export type ICollection<T> = mongo.Collection<T>;
 export type IFilter<T = any> = mongo.FilterQuery<T>;
 // export type IQUeryOptions<T = any> = mongo.<T>;
 export type IAggregationCursor<T = any> = mongo.AggregationCursor<T>;
@@ -46,7 +47,7 @@ export function getConnectionInstance() {
 }
 
 // Command functions
-function getCollection<T>(collectionName: string): mongo.Collection<T> {
+export function getCollection<T>(collectionName: string): mongo.Collection<T> {
     return db.collection<T>(collectionName);
 }
 
@@ -79,12 +80,12 @@ export type NextQueryDirection = '$gte' | '$lte';
 
 export class Collection<T> {
 
-    protected collection: mongo.Collection;
+    protected collection: mongo.Collection<T>;
     public constructor(protected name: string) {
         this.collection = getCollection(name);
     }
 
-    protected ensure(doc: { _id?: mongo.ObjectId, createdAt?: Date, environment?: string }) {
+    public ensure(doc: { _id?: mongo.ObjectId, createdAt?: Date, environment?: string }) {
         if (!(doc as Object).hasOwnProperty('_id')) {
             doc._id = newObjectId();
         }
@@ -98,25 +99,33 @@ export class Collection<T> {
         }
     }
 
-    protected exists(query: IFilter): Promise<boolean> {
+    public exists(query: IFilter): Promise<boolean> {
         return this.collection.findOne(query)
             .then(doc => !!doc);
     }
 
-    protected findOne(query: IFilter): Promise<T> {
+    public findOne(query: IFilter): Promise<T> {
         return this.collection.findOne(query);
     }
 
-    protected aggregate(query: IFilter[]): mongo.AggregationCursor {
+    public aggregate(query: IFilter[]): mongo.AggregationCursor {
         return this.collection.aggregate(query);
     }
 
-    protected findMany(query: IFilter): Promise<T[]> {
+    public findMany(query: IFilter): Promise<T[]> {
         const cursor = this.collection.find(query);
         return selectPromise(cursor);
     }
 
-    protected q<T>(query: IFilter<T>, options: any, sort?: any, limit?: number, nextField?: string, nextId?: string, nextDirection?: NextQueryDirection): Promise<{
+    public deleteOne(query: IFilter) {
+        return this.collection.deleteOne(query);
+    }
+
+    public deleteMany(query: IFilter) {
+        return this.collection.deleteMany(query);
+    }
+
+    public query<T>(query: IFilter<T>, options: any, sort?: any, limit?: number, nextField?: string, nextId?: string, nextDirection?: NextQueryDirection): Promise<{
         items: T[],
         nextId: string
     }> {
@@ -138,15 +147,26 @@ export class Collection<T> {
             };
         }
 
+        debug('querystructure', util.inspect(query, true, null));
+
         const cursor = this.collection.find<T>(query, options);
-        debug('cursor', cursor);
+        debug('cursor');
         return cursor
             .limit(limit)
             .sort(sort)
-            .next()
-            .then(nextDocument => {
-                nextFieldValue = (nextDocument as any)[nextField]; // assume _id
-                return cursor.toArray();
+            .hasNext()
+            .then(hasNext => {
+                if (hasNext) {
+                    return cursor
+                        .next()
+                        .then(nextDocument => {
+                            debug('nextDocument', util.inspect(nextDocument));
+                            nextFieldValue = (nextDocument as any)[nextField]; // assume _id
+                            return Promise.resolve(cursor.toArray());
+                        });
+                } else {
+                    return cursor.toArray();
+                }
             })
             .then(items => Promise.resolve({
                 items,
@@ -154,13 +174,13 @@ export class Collection<T> {
             }));
     }
 
-    protected insertOne<T = any>(doc: T, options?: mongo.CollectionInsertOneOptions): Promise<T> {
+    public insertOne<T = any>(doc: T, options?: mongo.CollectionInsertOneOptions): Promise<T> {
         this.ensure(doc);
         return this.collection.insertOne(doc, options)
             .then(result => Promise.resolve(doc));
     }
 
-    protected insertMany(docs: any[], options?: mongo.CollectionInsertManyOptions): Promise<mongo.InsertWriteOpResult> {
+    public insertMany(docs: any[], options?: mongo.CollectionInsertManyOptions): Promise<mongo.InsertWriteOpResult> {
         return this.collection.insertMany(docs, options);
         // .then(result => Promise.resolve());
     }

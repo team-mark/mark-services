@@ -21,7 +21,7 @@ export interface IModelConsumer {
 
 export default class Model<T extends IModelDb, T1 extends IModelConsumer> extends mongoDb.Collection<T> {
 
-    protected constructor(name: string) {
+    protected constructor(protected name: string) {
         super(name);
     }
 

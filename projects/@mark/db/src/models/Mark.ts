@@ -34,11 +34,10 @@ const COLLECTION_NAME = 'marks';
 const TIME_CONST = 1527699872;
 
 export class Mark extends Model<IMarkDb, IMarkConsumer> {
-    private marks: mongoDb.ICollection;
+    private marks: mongoDb.ICollection<Mark>;
 
     public constructor() {
         super(COLLECTION_NAME);
-        this.marks = this.collection;
     }
 
     // 11.7.1.1 Algortihm 2 as defined in Mark Design Document
@@ -153,28 +152,34 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             nextId: string,
         }> {
 
-        debug('listFeed');
-
         const DEFAULT_LIMIT = 100;
+        let postOwners: string[];
 
-        const filter = { owner: handle, };
+        const filter = { $or: { owner: { $in: postOwners } } };
         const options = {};
         const sort = {};
-        const { limit, nextDirection, nextField, nextId } = opts;
+        const { nextDirection, nextField, nextId } = opts;
+        let { limit } = opts;
+        limit = limit | DEFAULT_LIMIT;
 
         let consumableMarks: IMarkConsumer[] = [];
 
-        debug('about to query');
-
-        return db.marks.q<IMarkDb>(
-            filter,
-            options,
-            sort,
-            limit,
-            nextField,
-            nextId,
-            nextDirection
-        )
+        return db.users.getFollowing(handle)
+            .then(following => {
+                postOwners = following
+                    .map(f => f.following)
+                    .concat(handle);
+                Promise.resolve();
+            })
+            .then(() => this.query<IMarkDb>(
+                filter,
+                options,
+                sort,
+                limit,
+                nextField,
+                nextId,
+                nextDirection
+            ))
             .then(marksMeta => {
 
                 debug('markMeta');
@@ -198,9 +203,8 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                             nextId
                         });
                     });
-
-            })
-            .catch(error => debug(error));
+            });
+        // .catch(error => debug(error));
     }
 
     public getByOwner(handle: string): Promise<IMarkDb[]> {

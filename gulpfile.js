@@ -61,9 +61,9 @@ const debug = (done, params) => {
         return done();
     }
 
-    // Allow shorthand names (`ioe` => `ioe-droplit-io`)
-    if (projects[`${project}-droplit-io`])
-        project = `${project}-droplit-io`;
+    // Allow shorthand names (`ioe` => `ioe-mark-${project}`)
+    if (projects[`mark-${project}`])
+        project = `mark-${project}`;
 
     console.info(`debugging projects/${params.project} with DEBUG=${debugScope}`);
 
