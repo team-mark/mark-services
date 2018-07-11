@@ -24,10 +24,10 @@ router.route('/info')
     .get(authBasic, verify, respond(info))
     .all(notAllowed);
 router.route('/login')
-    .post(verify, respond(login))
+    .post(authAnon, verify, respond(login))
     .all(notAllowed);
 router.route('/logout')
-    .post(verify, respond(logout))
+    .post(authAnon, verify, respond(logout))
     .all(notAllowed);
 router.route('/check-handle-availability')
     .post(authAnon, verify, respond(checkHandleAvailability))
@@ -45,12 +45,15 @@ router.route('/update-profile-picture')
 // Route definitions
 
 function logout(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    const { tokenRecord } = res.locals as auth.BasicAuthFields;
+    // const { tokenRecord } = res.locals as auth.BasicAuthFields;
 
-    if (!tokenRecord)
-        return Promise.resolve(rest.Response.fromBadRequest('field_required', 'token required'));
+    const token = req.get('Authorization');
+    console.log(res.locals);
 
-    return db.tokens.deletebyToken(tokenRecord.token)
+    if (!token)
+        return Promise.resolve(rest.Response.fromSuccess());
+
+    return db.tokens.deletebyToken(token)
         .then(deleteResult => {
             if (deleteResult.result.ok) {
                 return Promise.resolve(rest.Response.fromSuccess());

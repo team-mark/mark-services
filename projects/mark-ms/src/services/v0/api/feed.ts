@@ -48,15 +48,15 @@ function listFeed(req: express.Request, res: express.Response, next: express.Nex
             const nextObjectString = (nextObject as Object).toString();
             const next = new Buffer(nextObjectString).toString('base64');
 
-            return rest.Response.fromSuccess({
+            return Promise.resolve(rest.Response.fromSuccess({
                 items,
                 next
-            });
+            }));
 
-        })
-        .catch(error => {
-            debug('error', error);
-            console.log('error', error);
-            return null;
         });
+    // .catch(error => {
+    //     debug('error', error);
+    //     console.log('error', error);
+    //     return null;
+    // });
 }

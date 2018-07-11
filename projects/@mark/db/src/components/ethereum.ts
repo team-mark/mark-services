@@ -4,6 +4,7 @@ import { BlockWithTransactionData, Transaction, TransactionReceipt } from 'ether
 // import { Block, Transaction, TransactionReceipt, Signature, } from 'web3/types';
 // import { Block, Transaction, TransactionReceipt,  } from 'web3/types';
 // import { Block, Transaction, TransactionReceipt } from 'web3';
+const debug = require('debug')('mark:ethereum');
 
 import { EthereumPost } from '../models/EthereumPost';
 import { getInstance } from './web3';
@@ -21,9 +22,9 @@ const ethChainId = 112358;
  */
 export function addEthereumPost(post: EthereumPost, address: string, key: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        createRawTx(post, address, key)
-            .then((rawTxData: string) => {
-                return getInstance().eth.sendRawTransaction(rawTxData, (error, transactionHash) => {
+        createSignedTx(post, address, key)
+            .then((signedTx: string) => {
+                  return getInstance().eth.sendSignedTransaction(signedTx, (error, transactionHash) => {
                     if (error) {
                         reject(error);
                     } else {
@@ -91,7 +92,7 @@ export function getBlock(blockHashOrBlockNumber: string | number): Promise<Block
  * @param address address (wallet) being posted with
  * @param privateKey address' private key
  */
-function createRawTx(post: EthereumPost, address: string, privateKey: string): Promise<string> {
+function createSignedTx(post: EthereumPost, address: string, privateKey: string): Promise<string> {
 
     const inputData: string = getInstance().utils.toHex(JSON.stringify(post));
     const txGas = 21000 + (68 * (inputData.length / 2));

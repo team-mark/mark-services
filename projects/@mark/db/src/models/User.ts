@@ -24,6 +24,12 @@ export interface IUserDb extends IModelDb {
     profilePicture: string;
 }
 
+export interface IFollowingDb extends IModelDb {
+    owner: string; // handle
+    following: string; // handle
+    hash: string; // add uniqueness to record b64(`${followerHandle}:${targetHandle}`)
+}
+
 export interface IEthereumAccount {
     address: string; // "0xb8CE9ab6943e0eCED004cDe8e3bBed6568B2Fa01",
     privateKey: string; // "0x348ce564d427a3311b6536bbcff9390d69395b06ed6c486954e971d960fe8709",
@@ -44,7 +50,9 @@ interface FindAndModifyWriteOpResultObject<T> {
 }
 
 export class User extends Model<IUserDb, IUserConsumer> {
-    private users: mongoDb.ICollection;
+    private users: mongoDb.ICollection<IUserDb>;
+    private following: mongoDb.Collection<IFollowingDb>; // mongoDb.ICollection<IFollowingDb>;
+
     public indexes: mongoDb.CollectionIndex[] = [
         {
             key: {
@@ -58,6 +66,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public constructor() {
         super(COLLECTION_NAME);
         this.users = this.collection;
+        this.following = new mongoDb.Collection('following');
     }
 
     public static map(user: IUserDb): IUserConsumer {
@@ -148,45 +157,66 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     }
 
-    public getFollowers(handle: string) {
+    public _getFollowers(handle: string) {
         return this.getByHandle(handle)
             .then(account => Promise.resolve(account.followers));
     }
 
+    public getFollowers(handle: string) {
+        const query = { following: handle };
+        return this.following.findMany(query);
+    }
+
     public getFollowing(handle: string) {
-        return this.getByHandle(handle)
-            .then(account => Promise.resolve(account.following));
+        const query = { owner: handle };
+        return this.following.findMany(query);
     }
 
     public addFollower(followerHandle: string, targetHandle: string) {
-        return this.getByHandle(targetHandle)
-            .then(account => {
-                if (!account) {
-                    return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
-                } else {
-                    const { followers } = account;
-                    const modifications = {
-                        followers: followers.concat(followerHandle)
-                    };
-                    return this.updateByHandle(targetHandle, modifications);
-                }
-            });
+        // return this.getByHandle(targetHandle)
+        //     .then(account => {
+        //         if (!account) {
+        //             return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
+        //         } else {
+        //             const { followers } = account;
+        //             const modifications = {
+        //                 followers: followers.concat(followerHandle)
+        //             };
+        //             return this.updateByHandle(targetHandle, modifications);
+        //         }
+        //     });
+
+        const followingRecord: IFollowingDb = {
+            owner: followerHandle,
+            following: targetHandle,
+            hash: Buffer.from(`${followerHandle}:${targetHandle}`).toString('base64')
+        };
+
+        return this.following.insertOne(followingRecord);
     }
 
     public removeFollower(followerHandle: string, targetHandle: string) {
-        return this.getByHandle(targetHandle)
-            .then(account => {
-                if (!account) {
-                    return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
-                } else {
-                    const { followers } = account;
-                    const modifications = {
-                        // filters specified follower handle (does not apply filter where f is not followerHandle)
-                        followers: followers.filter(f => f !== followerHandle)
-                    };
-                    return this.updateByHandle(targetHandle, modifications);
-                }
-            });
+        // return this.getByHandle(targetHandle)
+        //     .then(account => {
+        //         if (!account) {
+        //             return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
+        //         } else {
+        //             const { followers } = account;
+        //             const modifications = {
+        //                 // filters specified follower handle (does not apply filter where f is not followerHandle)
+        //                 followers: followers.filter(f => f !== followerHandle)
+        //             };
+        //             return this.updateByHandle(targetHandle, modifications);
+        //         }
+        //     });
+
+        const followingRecord: IFollowingDb = {
+            owner: followerHandle,
+            following: targetHandle,
+            hash: Buffer.from(`${followerHandle}:${targetHandle}`).toString('base64')
+        };
+
+        return this.following.deleteOne(followingRecord);
     }
 
     public updateProfilePicture(handle: string, url: string) {

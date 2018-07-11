@@ -1,5 +1,4 @@
 // Database Interface for the Comment collection
-import { bots } from '@mark/data-utils';
 import { mongoDb } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
 import { IpfsPost } from './IpfsPost';
@@ -17,12 +16,12 @@ export interface ICommentDb extends IModelDb {
 
 const COLLECTION_NAME = 'comments';
 
-export class Mark extends Model<ICommentDb, ICommentConsumer> {
-    private marks: mongoDb.ICollection;
+export class Comment extends Model<ICommentDb, ICommentConsumer> {
+    private comments: mongoDb.ICollection<ICommentDb>;
 
     public constructor() {
         super(COLLECTION_NAME);
-        this.marks = this.collection;
+        this.comments = this.collection;
     }
 
     public static map(mark: ICommentDb): ICommentConsumer {
@@ -38,7 +37,7 @@ export class Mark extends Model<ICommentDb, ICommentConsumer> {
     }
 
     public retrieveComments(_postId: string): Promise<ICommentConsumer[]> {
-        const filter: mongoDb.IFilter<ICommentDb> = {postId: _postId};
+        const filter: mongoDb.IFilter<ICommentDb> = { postId: _postId };
         const consumer: ICommentConsumer[] = [];
 
         return this.findMany(filter)
@@ -47,7 +46,7 @@ export class Mark extends Model<ICommentDb, ICommentConsumer> {
 
                 comment_mdb.forEach((comment_mdb, index) => {
                     hashes.push(comment_mdb.ethereum_id);
-                    consumer.push(Mark.map(comment_mdb));
+                    consumer.push(Comment.map(comment_mdb));
                 });
 
                 return getManyIpfsPosts(hashes)

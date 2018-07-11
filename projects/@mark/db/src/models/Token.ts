@@ -47,4 +47,9 @@ export class Token extends Model<ITokenDb, ITokenConsumer> {
             token: tokenRecord.token
         };
     }
+
+    public deletebyToken(token: string) {
+        const filter = { token };
+        return this.collection.deleteOne(filter);
+    }
 }
