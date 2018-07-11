@@ -9,11 +9,12 @@ from os import listdir
 from os.path import isfile, join
 
 UNKNOWN_INDEX = 0
+PAD_INDEX = 12
 
-def load_embeddings(path='glove.twitter.27B.25d.txt'):
+def load_embeddings(path):
 	word2id = {'<unk>': 0, '<hashtag>': 1, '<all caps>': 2, '<url>': 3, '<smile>': 4,
 				'lolface': 5, '<sadface>': 6, '<neutralface>': 7, '<heart>': 8, '<number>': 9,
-				'<repeat>': 10, '<elong>': 11}
+				'<repeat>': 10, '<elong>': 11, '<pad>': 12}
 	token_start = len(word2id)
 	embedding_matrix = [np.random.uniform(-1, 1, size=25) for _ in range(token_start)] # add in special tokens
 	count = 0
@@ -53,12 +54,11 @@ def load_training_data(path, word2id, cases_per_file=None):
 	for _, row in features.iterrows():
 		string = pt.tokenize(row.values[0])
 		split = string.split()
-
 		tweet = [word2id.get(word, UNKNOWN_INDEX) for word in split]
     
 		tweet_ids.append(tweet)
 
-	labels = np.asarray(labels, dtype=np.int16)
+	labels = np.asarray(labels, dtype=np.int32)
 
 	return tweet_ids, labels
     

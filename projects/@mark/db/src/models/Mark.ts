@@ -10,6 +10,7 @@ import { EthereumPost } from './EthereumPost';
 import { addIpfsPost, getManyIpfsPosts } from '../components/ipfs';
 import { IUserDb } from './User';
 import { ethereum } from '../components';
+import { UpdateWriteOpResult } from 'mongodb';
 
 const debug = require('debug')('mark:Mark');
 
@@ -268,5 +269,9 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
 
                 return this.insertOne(mark);
             });
+    }
+
+    public updateOne(query: mongoDb.IFilter, update: mongoDb.IFilter): Promise<UpdateWriteOpResult> {
+        return this.collection.updateOne(query, update);
     }
 }

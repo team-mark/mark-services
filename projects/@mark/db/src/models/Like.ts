@@ -48,7 +48,7 @@ export class Like extends Model<ILikeDb, ILikeConsumer> {
 
     public getMarkLikes(id: string): Promise<ILikeConsumer[]> {
         const filter: mongoDb.IFilter<ILikeDb> = {postId: id};
-
+        
         return this.findMany(filter)
             .then(likes => {
                 return Promise.resolve(likes.map(Like.map));

@@ -3,10 +3,12 @@ import tensorflow as tf
 def model_fn(features, labels, mode, params):
 
 	input_layer = tf.contrib.layers.embed_sequence(
-		features['x'], params['vocab_size'], params['dimensions'], initializer=params['embedding_ini'],
+		features['text'], params['vocab_size'], params['dimensions'], initializer=params['embedding_ini'],
 		trainable=True
     )
-	batch_size = tf.shape(features['x'])[0]
+	batch_size = tf.shape(features['text'])[0]
+
+	tf.Print(batch_size, [batch_size, input_layer])
 
 	cell = tf.contrib.rnn.LSTMBlockCell(32)
     
@@ -18,7 +20,10 @@ def model_fn(features, labels, mode, params):
                                 dtype=tf.float32)
 	outputs = final_state.h
 
-	dense_out = tf.layers.dense(outputs, activation=tf.nn.relu, units = 128)
+	concat = tf.concat([outputs, 
+		tf.cast(features['attributes'], tf.float32)], 1)
+
+	dense_out = tf.layers.dense(concat, activation=tf.nn.relu, units = 128)
 	dense2_out = tf.layers.dense(dense_out, activation=tf.nn.relu, units = 64)
 	logits = tf.layers.dense(dense2_out, activation=None, units = 2)
 
