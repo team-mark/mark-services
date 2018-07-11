@@ -36,6 +36,7 @@ const collectionMap = {
 } as any;
 
 export const newObjectId = mongoDb.newObjectId;
+export const ObjectID = mongoDb.ObjectID;
 
 export let accountInfo: AccountInfo;
 export let tokens: Token;

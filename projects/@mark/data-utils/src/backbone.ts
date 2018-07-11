@@ -1,5 +1,6 @@
 import * as redisConnect from './redisConnect';
 import * as redis from 'redis';
+
 export function announce(channel: string, message: string): Promise<void> {
     return new Promise((resolve, reject) => {
 

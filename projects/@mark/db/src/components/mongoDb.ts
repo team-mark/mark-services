@@ -8,6 +8,7 @@ export type IFilter<T = any> = mongo.FilterQuery<T>;
 // export type IQUeryOptions<T = any> = mongo.<T>;
 export type IAggregationCursor<T = any> = mongo.AggregationCursor<T>;
 export type ICursor<T = any> = mongo.Cursor<T>;
+export const ObjectID = mongo.ObjectID;
 
 // reference: https://docs.mongodb.com/manual/reference/command/createIndexes/
 export type CollectionIndex = {

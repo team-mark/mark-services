@@ -1,7 +1,9 @@
 import * as backbone from './backbone';
 import * as db from '@mark/db';
 import { IMarkConsumer } from '../../db';
-import { marks } from '../../db';
+import { marks, ObjectID } from '../../db';
+
+const debug = require('debug')('mark:bots');
 
 // Time to wait until classifing Mark in Hours
 const TIME_TO_CHECK = 1;
@@ -12,6 +14,7 @@ export interface BotMessageMetadata {
     percentage1: number;
 }
 
+// retrieves Marks that need to be classified by user
 function getMarksForBotCheck(user: string): Promise<IMarkConsumer []> {
     const date = new Date();
 
@@ -21,30 +24,47 @@ function getMarksForBotCheck(user: string): Promise<IMarkConsumer []> {
     return marks.getMarks(1, 0, 50, query);
 }
 
+// updates Mark bot flag on mongo
 function classifyMark(mark: IMarkConsumer) {
+    debug(`Classifying ${mark.body}`);
     const response = submitMessage(mark.body);
+
     response.then(botClass => {
-        const query = {_id: mark.id};
+        const query = {_id: new ObjectID(mark.id)};
         let update = {};
 
+        debug(`Classifier response: ${botClass.class}`);
+
         if (botClass.class === 1)
-            update = { bot: 'BOT' };
+            update = { $set: { bot: 'BOT' }};
         else if (botClass.class === 0)
-            update = { bot: 'USER' };
-        marks.update(query, update);
+            update = { $set: { bot: 'USER' }};
+
+        debug(`Updating Mark document ${mark.id}`);
+
+        marks.updateOne(query, update)
+            .then( res => {
+                debug(`update result: ${res.result.nModified}`);
+            });
     });
 }
 
-export function botCheck(user: string) {
+// gets all marks by user and runs classifications on
+// Marks not classified and older than TIME_TO_CHECK
+// defined in bots.ts
+export function runBotCheck(user: string) {
     getMarksForBotCheck(user)
         .then(marks => {
+            debug(`Classifiying ${marks.length} marks`);
+
             marks.forEach(element => {
                 classifyMark(element);
             });
         });
 }
 
-export function submitMessage(message: string): Promise<BotMessageMetadata> {
+// Sends Mark to ai service for classification
+function submitMessage(message: string): Promise<BotMessageMetadata> {
     const id = db.newObjectId();
     const channel = `bots-${id}`;
     const responseChannel = `botsreply-${id}`;
@@ -53,14 +73,15 @@ export function submitMessage(message: string): Promise<BotMessageMetadata> {
 
         backbone.subscribe(responseChannel)
             .then(sub => {
+                debug(`Sending ${message} for classification!`);
                 sub.on('subscribe', (responseChannel: string, _message: string) => {
+                    debug(`Sub on: ${_message}`);
                     backbone.announce(channel, message);
                 });
 
                 sub.on('message', (responseChannel: string, message: string) => {
                     try {
                         const response: BotMessageMetadata = JSON.parse(message);
-                        console.log(response);
                         resolve(response);
                     } catch (e) {
                         reject(e);

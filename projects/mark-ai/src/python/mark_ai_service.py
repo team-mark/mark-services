@@ -118,6 +118,8 @@ def main(argv):
             job = dict(
                     channel=item['channel'],
                     content=item['data'])
+            print("Adding Job:", item['channel'])
+            sys.stdout.flush()
             q.put(job)
 
     print("setting thread stop")
