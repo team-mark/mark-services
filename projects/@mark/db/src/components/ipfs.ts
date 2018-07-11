@@ -4,7 +4,7 @@ import { IpfsPost } from '../models/IpfsPost';
 const ipfsAPI = require('ipfs-api');
 const debug = require('debug')('mark:ipfs');
 
-const ip = '10.171.204.180';
+const ip = '6d228ade.ngrok.io';
 const port = 80;
 const ipfsClient = new ipfsAPI(ip, port);
 
