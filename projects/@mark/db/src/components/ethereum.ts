@@ -22,9 +22,9 @@ const ethChainId = 112358;
  */
 export function addEthereumPost(post: EthereumPost, address: string, key: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        createSignedTx(post, address, key)
-            .then((signedTx: string) => {
-                  return getInstance().eth.sendSignedTransaction(signedTx, (error, transactionHash) => {
+        createSignedPostTx(post, address, key)
+            .then((signedPostTx: string) => {
+                return getInstance().eth.sendSignedTransaction(signedPostTx, (error, transactionHash) => {
                     if (error) {
                         reject(error);
                     } else {
@@ -86,13 +86,43 @@ export function getBlock(blockHashOrBlockNumber: string | number): Promise<Block
     });
 }
 
+export function fundAccount(targetAccount: string) {
+
+    const accountNumber = Math.floor(Math.random() * 2 + 1); // 1 or 2 always;
+
+    // const ownerAccount = process.env[`ADMIN_ETH_ACC${accountNumber}`];
+    // const privateKey = process.env[`ADMIN_ETH_PASS${accountNumber}`];
+    const ownerAccount = process.env.ADMIN_ETH_ACC1;
+    const privateKey = process.env.ADMIN_ETH_PASS1;
+
+    console.log('fundAccount');
+    console.log('accountNumber', accountNumber);
+    console.log('targetAccount', targetAccount);
+    console.log('ownerAccount', ownerAccount);
+    console.log('privateKey', privateKey);
+    console.log('txValue', txValue);
+
+    return new Promise((resolve, reject) => {
+        createSignedFundingTx(txValue, targetAccount, ownerAccount, privateKey)
+            .then(signedFundsTx => {
+                return getInstance().eth.sendSignedTransaction(signedFundsTx, (error, transactionHash) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(transactionHash);
+                    }
+                });
+            });
+    });
+}
+
 /**
  *
  * @param post item being posted
  * @param address address (wallet) being posted with
  * @param privateKey address' private key
  */
-function createSignedTx(post: EthereumPost, address: string, privateKey: string): Promise<string> {
+function createSignedPostTx(post: EthereumPost, address: string, privateKey: string): Promise<string> {
 
     const inputData: string = getInstance().utils.toHex(JSON.stringify(post));
     const txGas = 21000 + (68 * (inputData.length / 2));
@@ -100,6 +130,50 @@ function createSignedTx(post: EthereumPost, address: string, privateKey: string)
     const tx: Transaction = {
         to: address,
         value: txValue,
+        gas: txGas,
+        gasPrice: txGasPrice,
+        chainId: ethChainId, // chainId is not in transaction structure per typings (web3 expects it);
+        data: inputData
+        // 'from' automatically set to address
+        // 'nonce' automatically calculated
+    } as any;
+
+    return getInstance().eth.accounts.signTransaction(tx, privateKey)
+        .then(signedTx => {
+
+            try {
+                // Format the signed transaction
+                const validJson = JSON.stringify(signedTx);
+                const rawTx = JSON.parse(validJson).rawTransaction;
+
+                return Promise.resolve(rawTx);
+
+            } catch (error) {
+                return Promise.reject(error);
+            }
+        });
+
+}
+
+/**
+ *
+ * @param post item being posted
+ * @param address address (wallet) being posted with
+ * @param privateKey address' private key
+ */
+function createSignedFundingTx(amount: number, to: string, from: string, privateKey: string): Promise<string> {
+
+    const data = {
+        message: 'funds initiation from Mark administration'
+    };
+    const inputData: string = getInstance().utils.toHex(JSON.stringify(data));
+
+    const txGas = 21000 + (68 * (inputData.length / 2));
+
+    const tx: Transaction = {
+        to,
+        from,
+        value: amount,
         gas: txGas,
         gasPrice: txGasPrice,
         chainId: ethChainId, // chainId is not in transaction structure per typings (web3 expects it);

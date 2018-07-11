@@ -78,6 +78,9 @@ function login(req: express.Request, res: express.Response, next: express.NextFu
         cryptoLib.hashPassword(passwordh)
     ])
         .then(([_userRecord, passHash]) => {
+            if (!_userRecord) {
+                return Promise.reject(rest.Response.fromNotFound());
+            }
             userRecord = _userRecord;
 
             debug('userRecord', userRecord);
@@ -411,6 +414,7 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
     // accountInfoKey = hash(accountId, handle) walk (roll3 times)
 
     const accountInfoKey = `signup:accountInfo:${state}.${code}`;
+    // let
 
     return new Promise((resolve, reject) => {
 
@@ -519,8 +523,9 @@ function signupValidate(req: express.Request, res: express.Response, next: expre
                                         db.tokens.whitelist(refT, linkA, handle)
                                             .then(authToken => {
 
-                                                resolve(rest.Response.fromSuccess({ token: authToken.token }));
-
+                                                db.users.fundUserAccount(handle)
+                                                    .then(() => resolve(rest.Response.fromSuccess({ token: authToken.token })))
+                                                    .catch(reject);
                                             });
                                     });
 

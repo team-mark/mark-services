@@ -1,5 +1,5 @@
 
-import { mongoDb, W3 } from '../components';
+import { mongoDb, W3, ethereum } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
 import { authentication } from '@mark/utils';
 const debug = require('debug')('mark:Account');
@@ -222,5 +222,11 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public updateProfilePicture(handle: string, url: string) {
         const modifications: Partial<IUserDb> = { profilePicture: url };
         return this.updateByHandle(handle, modifications);
+    }
+
+    public fundUserAccount(handle: string): Promise<void> {
+        return this.getByHandle(handle)
+            .then(userRecord => ethereum.fundAccount(userRecord.address))
+            .then(() => Promise.resolve(undefined));
     }
 }
