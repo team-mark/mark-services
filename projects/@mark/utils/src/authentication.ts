@@ -175,7 +175,7 @@ export function getRefPK(linkPK: string, privateKey: string) {
  * @return BASE64 STRING
  */
 export function getPrivateKey(linkPK: string, refPk: string) {
-    const privateKey = cryptoLib.XORBase64Strings(linkPK, refPk).replace('=', '');
+    const privateKey = cryptoLib.XORBase64Strings(linkPK, refPk).replace(/=/g, '');
     return privateKey;
 }
 
