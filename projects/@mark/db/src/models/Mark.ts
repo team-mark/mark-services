@@ -1,7 +1,6 @@
 // Database Interface for the Marks (Post) collection
 import { bots } from '@mark/data-utils';
 import { authentication } from '@mark/utils';
-import * as db from '../../';
 import { mongoDb, ipfs } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
 import { User } from './User';
@@ -11,8 +10,8 @@ import { addIpfsPost, getManyIpfsPosts } from '../components/ipfs';
 import { IUserDb } from './User';
 import { ethereum } from '../components';
 import { UpdateWriteOpResult } from 'mongodb';
-
 const debug = require('debug')('mark:Mark');
+import * as util from 'util';
 
 export interface IMarkConsumer extends IModelConsumer {
     ethereum_id: string;
@@ -35,9 +34,13 @@ const TIME_CONST = 1527699872;
 
 export class Mark extends Model<IMarkDb, IMarkConsumer> {
     private marks: mongoDb.ICollection<Mark>;
+    // this.users: mongoDb.ICollectionDb
+    private users: User;
 
     public constructor() {
         super(COLLECTION_NAME);
+        this.users = new User();
+
     }
 
     // 11.7.1.1 Algortihm 2 as defined in Mark Design Document
@@ -147,15 +150,17 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             nextField?: string
             nextId?: string
             nextDirection?: mongoDb.NextQueryDirection
-        }): Promise<{
-            items: IMarkConsumer[],
-            nextId: string,
-        }> {
+        }) {
+        //      : Promise<{
+        //     items: IMarkConsumer[],
+        //     nextId: string,
+        // }> {
 
         const DEFAULT_LIMIT = 100;
-        let postOwners: string[];
+        const postOwners: string[] = [];
 
-        const filter = { $or: { owner: { $in: postOwners } } };
+        // const filter = { $or: [{ owner: { $in: postOwners } }] };
+        const filter = { owner: { $in: postOwners } };
         const options = {};
         const sort = {};
         const { nextDirection, nextField, nextId } = opts;
@@ -164,27 +169,40 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
 
         let consumableMarks: IMarkConsumer[] = [];
 
-        return db.users.getFollowing(handle)
+        debug('get following');
+        return this.users.getFollowing(handle)
             .then(following => {
-                postOwners = following
+                debug('following', following);
+
+                following
                     .map(f => f.following)
-                    .concat(handle);
-                Promise.resolve();
+                    .concat(handle)
+                    .forEach(f => postOwners.push(f));
+
+                debug('postOwners', postOwners);
+                debug('now query', util.inspect(filter, true, undefined));
+                return this.query<IMarkDb>(
+                    filter,
+                    options,
+                    sort,
+                    limit,
+                    nextField,
+                    nextId,
+                    nextDirection
+                );
             })
-            .then(() => this.query<IMarkDb>(
-                filter,
-                options,
-                sort,
-                limit,
-                nextField,
-                nextId,
-                nextDirection
-            ))
             .then(marksMeta => {
 
-                debug('markMeta');
+                debug('markMeta', marksMeta);
                 const { nextId } = marksMeta;
                 consumableMarks = marksMeta.items as any;
+
+                if (consumableMarks.length === 0) {
+                    return Promise.resolve({
+                        items: [],
+                        next: undefined
+                    });
+                }
 
                 const hashes = marksMeta.items.map(m => m.ipfs_id);
 
@@ -203,13 +221,13 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                             nextId
                         });
                     });
-            });
-        // .catch(error => debug(error));
+            })
+            .catch(error => debug(error));
     }
 
     public getByOwner(handle: string): Promise<IMarkDb[]> {
         const filter = { owner: handle };
-        return db.marks.findMany(filter);
+        return this.findMany(filter);
     }
 
     /**

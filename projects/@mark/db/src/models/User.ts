@@ -10,6 +10,7 @@ export interface IUserConsumer extends IModelConsumer {
     address: string;
     // link_a: string;
     // ref_a: string;
+    balance: string;
 }
 
 // update over in @mark/utils/rest if changes made here
@@ -22,6 +23,7 @@ export interface IUserDb extends IModelDb {
     followers: string[]; // list of handles
     following: string[]; // list of handles
     profilePicture: string;
+    balance: string;
 }
 
 export interface IFollowingDb extends IModelDb {
@@ -73,7 +75,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
         const mappedUser: IUserConsumer = {
             handle: user.handle,
             address: user.address,
-            // id: User.mapId(user._id)
+            balance: user.balance,
         };
         return mappedUser;
     }
@@ -106,7 +108,8 @@ export class User extends Model<IUserDb, IUserConsumer> {
             state,
             followers: [],
             following: [],
-            profilePicture: undefined
+            profilePicture: undefined,
+            balance: '0'
         };
 
         debug('user', user);
@@ -121,7 +124,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     public updateById(id: string | object, modifications: any): Promise<IUserDb> {
         const filter = { _id: User.formatId(id) };
-        const update = modifications;
+        const update = { $set: { ...modifications } };
         // forced 'as any' to comply with typiungs. Typings are set to 3.0, but
         // database is setup for 3.6 and these options are compliant with 3.6.
         // see https://docs.mongodb.com/manual/reference/method/db.collection.findOneAndUpdate/#db-collection-findoneandupdate
@@ -152,7 +155,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     public updateByHandle(handle: string, modifications: any) {
         const filter: mongoDb.IFilter<IUserDb> = { handle };
-        return this.users.updateOne(filter, modifications)
+        return this.users.updateOne(filter, { $set: { ...modifications } })
             .then(updateWriteOpResult => Promise.resolve());
 
     }
@@ -169,6 +172,8 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     public getFollowing(handle: string) {
         const query = { owner: handle };
+        debug('query', query);
+        debug('this.following', this.following);
         return this.following.findMany(query);
     }
 
@@ -227,6 +232,21 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public fundUserAccount(handle: string): Promise<void> {
         return this.getByHandle(handle)
             .then(userRecord => ethereum.fundAccount(userRecord.address))
-            .then(() => Promise.resolve(undefined));
+            .then(res => {
+                const eth = W3.getInstance().utils.fromWei(res.tx.v, 'ether');
+                return this.updateByHandle(handle, { balance: eth });
+            })
+            .then(updateResult => Promise.resolve(undefined));
     }
+
+    public getBlance(handle: string): Promise<string> {
+        return this.getByHandle(handle)
+            .then(userRecord => ethereum.getBalance(userRecord.address));
+    }
+
+    public getGasPrice(): Promise<string> {
+        debug('getgas');
+        return ethereum.getGasPrice();
+    }
+
 }

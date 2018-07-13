@@ -160,22 +160,26 @@ export function getLinkA(linkQ: string, refU: string) {
 /**
  * Stored on user record for private key decryption.
  * @param linkPK base64
- * @param privateKey base64
- * @return BASE64 STRING
+ * @param privateKey base64 '0x...' assume ethereum 0x private key
+ * @return base64
  */
 export function getRefPK(linkPK: string, privateKey: string) {
-    const refPK = cryptoLib.XORBase64Strings(linkPK, privateKey);
+    const pkSub = privateKey.substr(2); // remove '0x' from the front of the string
+    const refPK = cryptoLib.XORBase64Strings(linkPK, pkSub);
     return refPK;
 }
 
 /**
  * Derive eth user's private key from linkPK and refPK.
- * @param linkPK
- * @param refPk
- * @return BASE64 STRING
+ * @param linkPK base64
+ * @param refPk base64
+ * @return base64
  */
 export function getPrivateKey(linkPK: string, refPk: string) {
-    const privateKey = cryptoLib.XORBase64Strings(linkPK, refPk).replace(/=/g, '');
+    const raw = cryptoLib.XORBase64Strings(linkPK, refPk);
+    console.log('raw password', raw);
+    const privateKey = `0x${raw.replace(/=/g, '')}`;
+    console.log('pk', privateKey);
     return privateKey;
 }
 
@@ -199,7 +203,7 @@ export function getLinkPK(userId: string, handle: string, passwordh: string) {
 
     return cryptoLib.hash(tohash, iterations)
         .then(hash => {
-            const linkPK = hash.substr(1, 40);
+            const linkPK = hash.substr(1, 64);
             return Promise.resolve(linkPK);
         });
 }
