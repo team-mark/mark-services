@@ -1,5 +1,5 @@
 // Database Interface for the Marks (Post) collection
-import { bots } from '@mark/data-utils';
+// import { bots } from '@mark/data-utils';
 import { authentication } from '@mark/utils';
 import { mongoDb, ipfs } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
@@ -82,24 +82,24 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     }
 
     // Assembles IMarkConsumers given a list of MongoDb Mark documents
-    private static assembleMarks(marks: IMarkDb[]): Promise<IMarkConsumer[]> {
-        const hashes: string[] = [];
-        const consumer: IMarkConsumer[] = [];
+    // private static assembleMarks(marks: IMarkDb[]): Promise<IMarkConsumer[]> {
+    //     const hashes: string[] = [];
+    //     const consumer: IMarkConsumer[] = [];
 
-        marks.forEach((mark, index) => {
-            hashes.push(mark.ethereum_id);
-            consumer.push(Mark.map(mark));
-        });
+    //     marks.forEach((mark, index) => {
+    //         hashes.push(mark.ethereum_id);
+    //         consumer.push(Mark.map(mark));
+    //     });
 
-        return getManyIpfsPosts(hashes)
-            .then(ipfs_posts => {
-                for (let i = 0; i < ipfs_posts.length; i++) {
-                    consumer[i].body = ipfs_posts[i].content;
-                    consumer[i].owner = ipfs_posts[i].author;
-                }
-                return Promise.resolve(consumer);
-            });
-    }
+    //     return getManyIpfsPosts(hashes)
+    //         .then(ipfs_posts => {
+    //             for (let i = 0; i < ipfs_posts.length; i++) {
+    //                 consumer[i].body = ipfs_posts[i].content;
+    //                 consumer[i].owner = ipfs_posts[i].author;
+    //             }
+    //             return Promise.resolve(consumer);
+    //         });
+    // }
 
     /**
      * Returns Marks by time created
@@ -107,36 +107,36 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
      * @param skip      Number of records to skip
      * @param size      Number of records to return
     */
-    public getMarks(sort: number, skip: number, size: number, query?: mongoDb.IFilter): Promise<IMarkConsumer[]> {
-        const cursor: mongoDb.ICursor<IMarkDb> = this.collection.find(query);
+    // public getMarks(sort: number, skip: number, size: number, query?: mongoDb.IFilter): Promise<IMarkConsumer[]> {
+    //     const cursor: mongoDb.ICursor<IMarkDb> = this.collection.find(query);
 
-        if (sort === 1 || sort === -1)
-            cursor.sort({ createdAt: sort });
-        cursor.skip(skip);
-        cursor.limit(size);
+    //     if (sort === 1 || sort === -1)
+    //         cursor.sort({ createdAt: sort });
+    //     cursor.skip(skip);
+    //     cursor.limit(size);
 
-        return cursor.toArray()
-            .then(marks => {
-                return Mark.assembleMarks(marks);
-            }, error => {
-                console.log(error);
-                return Promise.reject(new Error('Internal error'));
-            });
-    }
+    //     return cursor.toArray()
+    //         .then(marks => {
+    //             return Mark.assembleMarks(marks);
+    //         }, error => {
+    //             console.log(error);
+    //             return Promise.reject(new Error('Internal error'));
+    //         });
+    // }
 
-    public getMarksAggregate(query: mongoDb.IFilter<IMarkDb>[], skip?: number, size?: number): Promise<IMarkConsumer[]> {
-        const cursor: mongoDb.IAggregationCursor<IMarkDb> = this.aggregate(query);
+    // public getMarksAggregate(query: mongoDb.IFilter<IMarkDb>[], skip?: number, size?: number): Promise<IMarkConsumer[]> {
+    //     const cursor: mongoDb.IAggregationCursor<IMarkDb> = this.aggregate(query);
 
-        if (skip)
-            cursor.skip(skip);
-        if (size)
-            cursor.limit(size);
+    //     if (skip)
+    //         cursor.skip(skip);
+    //     if (size)
+    //         cursor.limit(size);
 
-        return cursor.toArray()
-            .then(marks => {
-                return Mark.assembleMarks(marks);
-            });
-    }
+    //     return cursor.toArray()
+    //         .then(marks => {
+    //             return Mark.assembleMarks(marks);
+    //         });
+    // }
 
     /**
      *
@@ -191,7 +191,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                     nextDirection
                 );
             })
-            .then(marksMeta => {
+            .then<any>(marksMeta => {
 
                 debug('markMeta', marksMeta);
                 const { nextId } = marksMeta;

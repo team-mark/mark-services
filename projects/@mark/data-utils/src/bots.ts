@@ -1,7 +1,5 @@
 import * as backbone from './backbone';
 import * as db from '@mark/db';
-import { IMarkConsumer } from '../../db';
-import { marks, ObjectID } from '../../db';
 
 const debug = require('debug')('mark:bots');
 
@@ -15,22 +13,22 @@ export interface BotMessageMetadata {
 }
 
 // retrieves Marks that need to be classified by user
-function getMarksForBotCheck(user: string): Promise<IMarkConsumer []> {
+function getMarksForBotCheck(user: string): Promise<db.IMarkConsumer []> {
     const date = new Date();
 
     date.setHours(date.getHours() - TIME_TO_CHECK);
     const query = { createdAt: {$lt: date}, bot: 'UNKNOWN', owner: user};
 
-    return marks.getMarks(1, 0, 50, query);
+    return db.marks.getMarks(1, 0, 50, query);
 }
 
 // updates Mark bot flag on mongo
-function classifyMark(mark: IMarkConsumer) {
+function classifyMark(mark: db.IMarkConsumer) {
     debug(`Classifying ${mark.body}`);
     const response = submitMessage(mark.body);
 
     response.then(botClass => {
-        const query = {_id: new ObjectID(mark.id)};
+        const query = {_id: new db.ObjectID(mark.id)};
         let update = {};
 
         debug(`Classifier response: ${botClass.class}`);
@@ -42,8 +40,8 @@ function classifyMark(mark: IMarkConsumer) {
 
         debug(`Updating Mark document ${mark.id}`);
 
-        marks.updateOne(query, update)
-            .then( res => {
+        db.marks.updateOne(query, update)
+            .then(res => {
                 debug(`update result: ${res.result.nModified}`);
             });
     });
