@@ -4,9 +4,9 @@ import { IpfsPost } from '../models/IpfsPost';
 const ipfsAPI = require('ipfs-api');
 const debug = require('debug')('mark:ipfs');
 
-const ip = '6d228ade.ngrok.io';
-const port = 80;
-const ipfsClient = new ipfsAPI(ip, port);
+// const ip = '6d228ade.ngrok.io';
+const { IPFS_ENDPOINT, IPFS_PORT } = process.env;
+const ipfsClient = new ipfsAPI(IPFS_ENDPOINT, IPFS_PORT);
 
 // Adds an IpfsPost and returns its hash.
 export function addIpfsPost(post: IpfsPost): Promise<Multihash> {
