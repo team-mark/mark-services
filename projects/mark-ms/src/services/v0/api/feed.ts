@@ -53,7 +53,7 @@ function listFeed(req: express.Request, res: express.Response, next: express.Nex
             }
 
             return Promise.resolve(rest.Response.fromSuccess({
-                items,
+                items: items.map(db.Mark.map),
                 next
             }));
 

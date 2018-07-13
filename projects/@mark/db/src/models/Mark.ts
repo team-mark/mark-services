@@ -69,12 +69,12 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             return Math.log10(popularity) + 4500 / (time - TIME_CONST);
     }
 
-    public static map(mark: IMarkDb): IMarkConsumer {
+    public static map(mark: IMarkDb & { body: string }): IMarkConsumer {
         const mapped: IMarkConsumer = {
             id: mark._id.toString(),
             ethereum_id: mark.ethereum_id,
-            body: null,
-            owner: null,
+            body: mark.body,
+            owner: mark.owner,
             createdAt: mark.createdAt.toDateString(),
         };
 
@@ -214,6 +214,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                         // Update consumable marks content
                         ipfsPosts.forEach((post, index) => {
                             consumableMarks[index].body = post.content;
+                            // consumableMarks[index].owner = post.author;
                         });
 
                         return Promise.resolve({
