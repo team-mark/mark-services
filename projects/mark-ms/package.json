@@ -7,7 +7,7 @@
     "Ferrante, Jake <jake@droplit.io>"
   ],
   "engines": {
-    "node": "^8.10.0"
+    "node": "=8.10.0"
   },
   "scripts": {
     "start": "node server",
