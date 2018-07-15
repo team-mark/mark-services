@@ -98,13 +98,13 @@ IF /I "%IN_PLACE_DEPLOYMENT%" NEQ "1" (
 call :SelectNodeVersion
 
 :: 3. Install npm packages
-IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
-  pushd "%DEPLOYMENT_TARGET%"
-  echo "Installing dependencies"
-  call :ExecuteCmd !NPM_CMD! install
-  IF !ERRORLEVEL! NEQ 0 goto error
-  popd
-)
+:: IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
+::   pushd "%DEPLOYMENT_TARGET%"
+::   echo "Installing dependencies"
+::   call :ExecuteCmd !NPM_CMD! install
+::   IF !ERRORLEVEL! NEQ 0 goto error
+::   popd
+:: )
 
 :: 4. Build the webclient
 IF EXIST "%DEPLOYMENT_TARGET%\Gulpfile.js" (
