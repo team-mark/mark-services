@@ -3,7 +3,7 @@
   "debug": "mark:*",
   "description": "Mark",
   "engines": {
-    "node": "=8.11.0"
+    "node": "=8.11.1"
   },
   "engineStrict": true,
   "main": "index.js",
