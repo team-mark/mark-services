@@ -13,17 +13,15 @@
     "install": "rm -f node_modules/web3/index.d.ts && rm -f node_modules/web3/types.d.ts"
   },
   "dependencies": {
+    "@types/bn.js": "^4.11.1",
+    "@types/ipfs": "git+https://github.com/survirtual/types-ipfs.git",
+    "@types/mongodb": "^3.0.15",
+    "@types/node": "^8.0.55",
+    "@types/web3": "git+https://github.com/ferrantejake/web3-types.git",
     "debug": "~2.6.9",
     "ipfs": "^0.29.3",
     "ipfs-api": "^22.0.1",
     "mongodb": "^3.0.7",
     "web3": "^1.0.0-beta.34"
-  },
-  "devDependencies": {
-    "@types/bn.js": "^4.11.1",
-    "@types/ipfs": "git+https://github.com/survirtual/types-ipfs.git",
-    "@types/mongodb": "^3.0.15",
-    "@types/node": "^8.0.55",
-    "@types/web3": "git+https://github.com/ferrantejake/web3-types.git"
   }
 }

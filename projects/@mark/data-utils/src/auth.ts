@@ -1,8 +1,7 @@
+import * as db from '@mark/db';
 import { rest } from '@mark/utils';
 import * as express from 'express';
 const debugV = require('debug')('mark-sys:auth');
-// import * as mongo from 'mongodb'
-import * as db from '@mark/db';
 
 export function authBasic(req: express.Request & { user?: db.IUserDb }, res: express.Response, next: express.NextFunction): void {
 
