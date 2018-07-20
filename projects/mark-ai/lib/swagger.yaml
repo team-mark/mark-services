@@ -1,0 +1,301 @@
+tags:
+  -
+    name: Marks
+    description: 'Operations which view/create/modify content on the Mark system.'
+  -
+    name: Tags
+    description: 'Operations used to view posts associated with hashtags.'
+  -
+    name: 'User Accounts'
+    description: 'Operations associated with interacting with User accounts.'
+paths:
+  /marks:
+    get:
+      summary: 'Returns an array of statuses'
+      tags:
+        - Marks
+      responses:
+        '200':
+          description: 'Successful retrieval of statuses'
+          schema:
+            x-oad-type: array
+            type: array
+            description: 'List of statuses'
+            items:
+              x-oad-type: object
+              type: object
+              title: Mark
+              description: Mark
+          x-oad-type: response
+      parameters:
+        -
+          name: ids
+          in: query
+          description: 'List of status ids'
+          required: false
+          type: string
+          x-oad-type: parameter
+    put:
+      summary: 'Revise mark'
+      tags:
+        - Marks
+      responses:
+        '200':
+          description: 'Post was made successfully'
+          x-oad-type: response
+        '400':
+          description: 'There was an error submitting the post'
+          schema:
+            x-oad-type: object
+            type: object
+            description: 'Error respones'
+            properties:
+              error:
+                x-oad-type: string
+                type: string
+                description: 'Error field describes the nature of the error'
+                enum:
+                  - bad_revision
+                  - unprocessable_entity
+          x-oad-type: response
+      parameters:
+        -
+          name: revision
+          in: body
+          required: false
+          schema:
+            x-oad-type: string
+            type: string
+            description: 'Mark transaction ID to revise'
+          x-oad-type: parameter
+    post:
+      summary: 'Post new mark'
+      tags:
+        - Marks
+      responses:
+        '200':
+          description: 'Post was made successfully'
+          x-oad-type: response
+        '400':
+          description: 'There was an error submitting the post'
+          schema:
+            x-oad-type: object
+            type: object
+            description: 'Error respones'
+            properties:
+              error:
+                x-oad-type: string
+                type: string
+                description: 'Error field describes the nature of the error'
+                enum:
+                  - bad_revision
+                  - unprocessable_entity
+          x-oad-type: response
+    x-oad-type: operation
+  '/marks/:tag':
+    get:
+      summary: 'Retrieve Marks associated with a tag'
+      description: "Retrieve marks assocaite with a tag. \nMarks can come back in orders specifed. Default order is cronological."
+      tags:
+        - Marks
+        - Tags
+      responses:
+        '200':
+          description: 'List of Marks'
+          schema:
+            x-oad-type: array
+            type: array
+            description: 'List of Mark items'
+            items:
+              x-oad-type: object
+              type: object
+              title: Mark
+              description: Mark
+          x-oad-type: response
+    x-oad-type: operation
+  '/users/:handle':
+    x-oad-type: operation
+  '/users/:handle/marks/:transactionId':
+    x-oad-type: operation
+  /account/login:
+    get:
+      summary: 'Allows a user to log into the Mark system'
+      description: 'Allows a user to log into the Mark system.'
+      tags:
+        - 'User Accounts'
+      responses:
+        '200':
+          description: 'Successful authentication'
+          schema:
+            x-oad-type: string
+            type: string
+            title: token
+            description: 'A user token that will allow the user to create/modify content created by the respective token owner on the platform.'
+          x-oad-type: response
+    x-oad-type: operation
+  /account/handle-availability:
+    get:
+      summary: 'Check is user handle is available.'
+      description: 'Check to see if a user handle is available.'
+      tags:
+        - 'User Accounts'
+      responses:
+        '200':
+          description: 'Handle is available'
+          x-oad-type: response
+        '400':
+          description: 'Handle is unavailable'
+          schema:
+            x-oad-type: string
+            type: string
+            title: Error
+            enum:
+              - invalid_handle
+              - not_available
+          x-oad-type: response
+      parameters:
+        -
+          name: handle
+          in: query
+          description: 'Handle the user has entered for the signup process.'
+          required: true
+          type: string
+          x-oad-type: parameter
+    x-oad-type: operation
+  /account/signup:
+    get:
+      summary: 'Start of the signup process.'
+      description: 'The start of the signup process.Returns a code, roll, and hashed key. Perform another hash on the hashed key and return the roll and the state, along with the texted code in the signup-validate step. '
+      tags:
+        - 'User Accounts'
+      responses:
+        '200':
+          description: 'Successful signup attempt.'
+          schema:
+            x-oad-type: object
+            type: object
+            properties:
+              state:
+                x-oad-type: string
+                type: string
+                title: state
+                description: 'State of transaction.'
+              roll:
+                x-oad-type: integer
+                type: integer
+                title: Roll
+                description: 'Roll number'
+                format: int32
+              key:
+                x-oad-type: string
+                type: string
+                title: key
+                description: 'A hashed key.'
+          x-oad-type: response
+    x-oad-type: operation
+  /account/signup-validate:
+    get:
+      summary: 'Validate the user hardware identity'
+      description: 'Validate that a user is in posession of the phone which they claim to own.'
+      tags:
+        - 'User Accounts'
+      responses:
+        '200':
+          description: 'Successful identity validation'
+          schema:
+            x-oad-type: string
+            type: string
+            title: token
+            description: 'A user token that will allow the user to create/modify content created by the respective token owner on the platform.'
+            default: dG9rZW4xMjNhc2RmZ2hqa2xxd2VydHl1aW9w
+          x-oad-type: response
+      parameters:
+        -
+          name: code
+          in: body
+          description: 'Code texted to user.'
+          required: true
+          schema:
+            x-oad-type: 'null'
+            type: 'null'
+          x-oad-type: parameter
+        -
+          name: state
+          in: path
+          required: true
+          type: string
+          x-oad-type: parameter
+        -
+          name: roll
+          in: path
+          required: true
+          type: integer
+          format: int32
+          x-oad-type: parameter
+        -
+          name: key
+          in: path
+          required: true
+          type: string
+          x-oad-type: parameter
+    x-oad-type: operation
+definitions:
+  Mark:
+    x-oad-type: object
+    type: object
+    title: Mark
+    description: 'Mark post data'
+    properties:
+      id:
+        x-oad-type: string
+        type: string
+        description: 'Transaction id'
+      owner:
+        x-oad-type: string
+        type: string
+        description: 'Owner handle'
+      ownerId:
+        x-oad-type: string
+        type: string
+        description: 'Owner wallet ID'
+      body:
+        x-oad-type: string
+        type: string
+        description: 'Post text corpus'
+      tags:
+        x-oad-type: array
+        type: array
+        description: 'List of tags in text corpus'
+        items:
+          x-oad-type: string
+          type: string
+          description: 'Tag in corpus'
+      location:
+        x-oad-type: string
+        type: string
+        description: "base64 encoded gps coordinates\nshema: b64(latitude:longitude)"
+securityDefinitions:
+  Authorization:
+    description: 'User authentication token'
+    name: 'User Token'
+    in: header
+    type: apiKey
+info:
+  title: 'Mark Services API'
+  version: 1.0.0
+  description: 'Communicate with the Mark Services project'
+  contact:
+    name: 'Jake Ferrante'
+    email: ferrantej@knights.ucf.edu
+  license:
+    name: MIT
+    url: 'https://mit-license.org'
+host: mark-services.azurewebsites.net
+basePath: /api/v1
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+swagger: '2.0'

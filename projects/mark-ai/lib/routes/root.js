@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const router = express_1.Router();
+const version = 'v0';
+const home = require(`../services/${version}/home`);
+const users = require(`../services/${version}/users`);
+router.use('/', home);
+router.use('/users', users);
+module.exports = router;
