@@ -92,10 +92,13 @@ function getDependencyList(project) {
         projectNames.forEach(name => resolver.add(name));
         projectNames.forEach(projectName => {
             (projectConfig[projectName].dependencies || []).forEach(dep => {
-                resolver.setDependency(project, dep);
+                console.log(`${projectName} ++ ${dep}`)
+                resolver.setDependency(projectName, dep);
             });
         });
     }
+
+    console.log('resolver', resolver.services)
     return resolver.resolve(project);
 }
 
@@ -141,14 +144,14 @@ gulp.task('startup', false, startupTask);
 
 function debugTask(project, debug, port) {
 
-    const debugScope = debug || process.env.DEBUG || 'droplit:*';
+    const debugScope = debug || process.env.DEBUG || 'mark*';
     if (project === undefined)
         return console.log('You must specify a project');
     console.log(`debugging projects/${project} with DEBUG=${debugScope}`);
-    // Allow shorthand project names (`ioe` => `ioe-droplit-io`)
+    // Allow shorthand project names (`ms` => `mark-ms`)
 
-    if (projectConfig[`${project}-droplit-io`])
-        project = `${project}-droplit-io`;
+    if (projectConfig[`mark-${project}`])
+        project = `mark-${project}`;
 
     console.log('starting project', project);
 
@@ -194,7 +197,6 @@ function debugTask(project, debug, port) {
 }
 
 function defaultTask(callback) {
-    console.log('default')
     if (APP_NAME)
         G$.sequence('startup', callback);
     else // not running in azure
@@ -223,8 +225,15 @@ function initMainTask() {
         .pipe(gulp.dest('.'));
 }
 
+gulp.task('copy-precompiled', 'Copy pre-compiled files to projects/', copyPrecompiledTask);
+
+function copyPrecompiledTask() {
+    return gulp.src(`./precompiled/**/*`)
+        .pipe(gulp.dest('.'));
+}
+
 function startupTask(callback) {
-    G$.sequence('init-main', 'build-main', callback);
+    G$.sequence('clean-main', ['install-main', 'init-main'], 'build-main', 'copy-precompiled', callback);
 }
 
 // Setup tasks
@@ -257,10 +266,12 @@ function installMainTask(callback) {
     const commands = [];
     deps.forEach(name => {
         // npm install
-        commands.push({ cmd: 'npm install', cwd: `projects/${name}` });
+        commands.push({ cmd: 'npm install --production', cwd: `projects/${name}` });
     });
     runCommands(commands, true, callback);
 }
+
+
 
 // NPM link tasks
 gulp.task('link', 'Link dependencies on local disk', linkTask);

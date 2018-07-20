@@ -1,7 +1,28 @@
 {
-    "@mark/utils": { },
-    "@mark/db": { "dependencies": [ "@mark/utils" ] },
-    "@mark/data-utils": { "dependencies": [ "@mark/utils", "@mark/db"] },
-    "mark-ai": { "dependencies": [ "@mark/utils", "@mark/data-utils", "@mark/db"] },
-    "mark-ms": { "dependencies": [ "@mark/utils", "@mark/data-utils", "@mark/db"] }
+    "@mark/utils": {},
+    "@mark/db": {
+        "dependencies": [
+            "@mark/utils"
+        ]
+    },
+    "@mark/data-utils": {
+        "dependencies": [
+            "@mark/utils",
+            "@mark/db"
+        ]
+    },
+    "mark-ai": {
+        "dependencies": [
+            "@mark/utils",
+            "@mark/data-utils",
+            "@mark/db"
+        ]
+    },
+    "mark-ms": {
+        "dependencies": [
+            "@mark/utils",
+            "@mark/data-utils",
+            "@mark/db"
+        ]
+    }
 }

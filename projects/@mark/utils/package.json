@@ -11,12 +11,15 @@
   "author": "Jake Ferrante",
   "license": "MIT",
   "dependencies": {
+    "buffer-xor": "^2.0.2",
+    "debug": "~2.6.9",
+    "http-status": "^1.0.1"
+  },
+  "devDependencies": {
     "@types/http-status": "^0.2.30",
     "@types/node": "^8.0.55",
     "blake2": "^1.4.0",
     "blake2b": "^2.1.2",
-    "buffer-xor": "^2.0.2",
-    "debug": "~2.6.9",
-    "http-status": "^1.0.1"
+    "blake2b-wasm": "^1.1.7"
   }
 }
