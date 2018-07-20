@@ -1,0 +1,25 @@
+{
+    "name": "web3",
+    "libraryName": "WEB3",
+    "data": {
+        "contributors": [
+            {
+                "name": "Jake Ferrante"
+            }
+        ],
+        "dependencies": {},
+        "typeScriptVersion": "2.1",
+        "libraryName": "WEB3",
+        "typingsPackageName": "web3",
+        "globals": [
+            "web3"
+        ],
+        "declaredModules": [
+            "web3/."
+        ],
+        "files": [
+            "index.d.ts"
+        ],
+        "hasPackageJson": false
+    }
+}
