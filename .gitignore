@@ -1,8 +1,8 @@
 lib
-# node_modules
+node_modules
 localconfig.json
 .env
-# Dockerfile
+Dockerfile
 
 **/*/testing/**/*
 projects/mark-ai/src/python/__pycache__/
