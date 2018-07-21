@@ -1,7 +1,7 @@
 import * as async from 'async';
 import * as db from '@mark/db';
 import * as express from 'express';
-import { auth, redisConnect, token } from '@mark/data-utils';
+import { auth, redisConnect, token, bots } from '@mark/data-utils';
 import { sns, s3 } from '../../../utils';
 import { authentication, cryptoLib, rest } from '@mark/utils';
 import * as STATUS from 'http-status';
@@ -17,6 +17,7 @@ module.exports = router;
 
 const { authBasic, authAnon, notAllowed } = auth;
 const { verify } = rest;
+const { captchaValidate } = bots;
 const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
 // Routes
@@ -24,7 +25,7 @@ router.route('/info')
     .get(authBasic, verify, respond(info))
     .all(notAllowed);
 router.route('/login')
-    .post(authAnon, verify, respond(login))
+    .post(authAnon, verify, captchaValidate, respond(login))
     .all(notAllowed);
 router.route('/logout')
     .post(authAnon, verify, respond(logout))
@@ -36,7 +37,7 @@ router.route('/signup')
     .post(authAnon, verify, respond(signup))
     .all(notAllowed);
 router.route('/signup-validate')
-    .post(authAnon, verify, respond(signupValidate))
+    .post(authAnon, verify, captchaValidate, respond(signupValidate))
     .all(notAllowed);
 router.route('/update-profile-picture')
     .post(authBasic, verify, upload.single('profile-picture'), respond(uploadProfilePicture))
