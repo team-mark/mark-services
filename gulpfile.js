@@ -237,7 +237,7 @@ gulp.task('setup', 'Install all modules', setupTask);
 gulp.task('teardown', 'Clean all', teardownTask);
 
 function setupTask(callback) {
-    G$.sequence('install', callback);
+    G$.sequence('install', 'link', callback);
 }
 
 function teardownTask(callback) {
