@@ -1,6 +1,8 @@
 import { mongoDb } from '../components';
 import * as mongo from 'mongodb';
 import Model, { IModelConsumer, IModelDb } from './Model';
+import { IFilter } from '../components/mongoDb';
+import { debug } from 'util';
 
 export interface ILikeConsumer extends IModelConsumer {
     author: string;
@@ -48,9 +50,10 @@ export class Like extends Model<ILikeDb, ILikeConsumer> {
 
     public getMarkLikes(id: string): Promise<ILikeConsumer[]> {
         const filter: mongoDb.IFilter<ILikeDb> = {postId: id};
-        
+
         return this.findMany(filter)
             .then(likes => {
+                console.log(likes);
                 return Promise.resolve(likes.map(Like.map));
             });
     }
@@ -62,6 +65,7 @@ export class Like extends Model<ILikeDb, ILikeConsumer> {
         const filter: mongoDb.IFilter<ILikeDb> = {author: handle, postId: _postId};
         return this.findOne(filter)
             .then(result => {
+                console.log(result);
                 if (result)
                     return Promise.resolve(true);
                 else
@@ -80,6 +84,27 @@ export class Like extends Model<ILikeDb, ILikeConsumer> {
                     return Promise.reject(new Error('Like already exists'));
                 else
                     return Promise.resolve(this.insertOne(likeDb));
+            });
+    }
+
+    public removeLike(_postId: string, handle: string): Promise<Boolean> {
+        const query: IFilter = {
+            postId: _postId,
+            author: handle
+        };
+        console.log(_postId, handle);
+        return this.checkLike(_postId, handle)
+            .then(result => {
+                console.log(result);
+                if (!result)
+                    return Promise.reject(new Error('Post Not liked!'));
+                else
+                    return Promise.resolve(this.deleteOne(query)).then( result => {
+                        return Promise.resolve(true);
+                    }, error => {
+                        debug(error);
+                        return error;
+                    });
             });
     }
 

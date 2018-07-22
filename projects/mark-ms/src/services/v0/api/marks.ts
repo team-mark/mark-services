@@ -14,7 +14,7 @@ const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
 // Routes
 router.route('/')
-    .get(authBasic, verify, respond(listMarks))
+    .get(authBasic, verify, respond(markFetch))
     .post(authBasic, verify, respond(postMark))
     // .put(authBasic, verify, respond(reviseMark))
     .all(notAllowed);
@@ -61,12 +61,14 @@ function markFetch(req: express.Request, res: express.Response, next: express.Ne
 
         return db.marks.getMarksAggregate(query)
             .then(marks => {
-                return Promise.resolve(rest.Response.fromSuccess(marks));
+                const ret = {items: marks, next: 'Not implemented'};
+                return Promise.resolve(rest.Response.fromSuccess(ret));
             });
     }
 
     return db.marks.getMarks(sort, skip, limit).then(marks => {
-        return Promise.resolve(rest.Response.fromSuccess(marks));
+        const ret = {items: marks, next: 'Not implemented'};
+        return Promise.resolve(rest.Response.fromSuccess(ret));
     });
 }
 

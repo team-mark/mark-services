@@ -1,7 +1,6 @@
 // const Web3 = require('web3');
 import * as web3 from 'web3';
 import { BlockWithTransactionData, Transaction, TransactionReceipt } from 'ethereum-types';
-import * as BigNumber from 'bignumber.js';
 // import { Block, Transaction, TransactionReceipt, Signature, } from 'web3/types';
 // import { Block, Transaction, TransactionReceipt,  } from 'web3/types';
 // import { Block, Transaction, TransactionReceipt } from 'web3';
@@ -23,12 +22,9 @@ const ethChainId = 112358;
  */
 export function addEthereumPost(post: EthereumPost, address: string, key: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        createRawPostTx(post, address, key)
+        createSignedPostTx(post, address, key)
             .then((signedPostTx: string) => {
-
-                debug('raw tx', signedPostTx);
-
-                return getInstance().eth.sendSignedTransaction(signedPostTx, (error, transactionHash) => {
+                return getInstance().eth.sendSignedTransaction(signedPostTx, (error: any, transactionHash: any) => {
                     if (error) {
                         reject(error);
                     } else {
@@ -42,7 +38,7 @@ export function addEthereumPost(post: EthereumPost, address: string, key: string
 // Returns undefined if the transaction does not contain a valid EthereumPost.
 export function getEthereumPost(txHash: string): Promise<EthereumPost> {
     return new Promise((resolve, reject) => {
-        getInstance().eth.getTransaction(txHash, (error, tx) => {
+        getInstance().eth.getTransaction(txHash, (error: any, tx: any) => {
             if (error) {
                 reject(error);
             }
@@ -61,11 +57,11 @@ export function getNewestBlock(): Promise<BlockWithTransactionData> {
 
     return new Promise((resolve, reject) => {
 
-        getInstance().eth.getBlockNumber((error, blockNumber) => {
+        getInstance().eth.getBlockNumber((error: any, blockNumber: any) => {
             if (error) {
                 reject(error);
             } else {
-                getInstance().eth.getBlock(blockNumber, returnTransactionObjects, (error, blockObj) => {
+                getInstance().eth.getBlock(blockNumber, returnTransactionObjects, (error: any, blockObj: any) => {
                     if (error) {
                         reject(error);
                     } else {
@@ -80,7 +76,7 @@ export function getNewestBlock(): Promise<BlockWithTransactionData> {
 
 export function getBlock(blockHashOrBlockNumber: string | number): Promise<BlockWithTransactionData> {
     return new Promise((resolve, reject) => {
-        getInstance().eth.getBlock(blockHashOrBlockNumber, true, (error, blockObj) => {
+        getInstance().eth.getBlock(blockHashOrBlockNumber, true, (error: any, blockObj: any) => {
             if (error) {
                 reject(error);
             } else {
@@ -90,34 +86,7 @@ export function getBlock(blockHashOrBlockNumber: string | number): Promise<Block
     });
 }
 
-export function getBalance(address: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-        getInstance().eth.getBalance(address, (error, bal) => {
-            if (error) {
-                reject(error);
-            } else {
-                resolve(bal.toString());
-            }
-        });
-    });
-}
-
-export function getGasPrice(): Promise<string> {
-    return new Promise((resolve, reject) => {
-        getInstance().eth.getGasPrice((error, gasprice) => {
-            if (error) {
-                reject(error);
-            } else {
-                resolve(gasprice.toString());
-            }
-        });
-    });
-}
-
-export function fundAccount(address: string): Promise<{
-    tx: web3.SignedTransaction,
-    hash: string
-}> {
+export function fundAccount(targetAccount: string) {
 
     const accountNumber = Math.floor(Math.random() * 2 + 1); // 1 or 2 always;
 
@@ -128,25 +97,19 @@ export function fundAccount(address: string): Promise<{
 
     console.log('fundAccount');
     console.log('accountNumber', accountNumber);
-    console.log('targetAccount', address);
+    console.log('targetAccount', targetAccount);
     console.log('ownerAccount', ownerAccount);
     console.log('privateKey', privateKey);
     console.log('txValue', txValue);
 
     return new Promise((resolve, reject) => {
-        const oneEther = 1;
-        createSignedFundingTx(oneEther, address, ownerAccount, privateKey)
-            .then(tx => {
-                const { rawTransaction } = tx;
-                return getInstance().eth.sendSignedTransaction(rawTransaction, (error, transactionHash) => {
+        createSignedFundingTx(txValue, targetAccount, ownerAccount, privateKey)
+            .then(signedFundsTx => {
+                return getInstance().eth.sendSignedTransaction(signedFundsTx, (error: any, transactionHash: any) => {
                     if (error) {
                         reject(error);
                     } else {
-                        resolve({
-                            tx,
-
-                            hash: transactionHash
-                        });
+                        resolve(transactionHash);
                     }
                 });
             });
@@ -159,7 +122,7 @@ export function fundAccount(address: string): Promise<{
  * @param address address (wallet) being posted with
  * @param privateKey address' private key
  */
-function createRawPostTx(post: EthereumPost, address: string, privateKey: string): Promise<string> {
+function createSignedPostTx(post: EthereumPost, address: string, privateKey: string): Promise<string> {
 
     const inputData: string = getInstance().utils.toHex(JSON.stringify(post));
     const txGas = 21000 + (68 * (inputData.length / 2));
@@ -176,7 +139,7 @@ function createRawPostTx(post: EthereumPost, address: string, privateKey: string
     } as any;
 
     return getInstance().eth.accounts.signTransaction(tx, privateKey)
-        .then(signedTx => {
+        .then((signedTx: any) => {
 
             try {
                 // Format the signed transaction
@@ -194,34 +157,33 @@ function createRawPostTx(post: EthereumPost, address: string, privateKey: string
 
 /**
  *
- * @param etherAmount amount of Ether to be transferred
+ * @param amount amount of Ether to be transferred
  * @param to address (wallet) to send Ether to
  * @param from address (wallet) to send Ether from
  * @param privateKey froms private key
  */
-function createSignedFundingTx(etherAmount: number, to: string, from: string, privateKey: string) {
+function createSignedFundingTx(amount: number, to: string, from: string, privateKey: string): Promise<string> {
 
     const txGas = 21000;
-    // const txGas = 1;
 
     const tx: Transaction = {
         to,
         from,
-        value: getInstance().utils.toWei(etherAmount.toString(), 'ether'),
+        value: getInstance().utils.toWei(amount.toString(), 'ether'),
         gas: txGas,
         gasPrice: txGasPrice,
         chainId: ethChainId, // chainId is not in transaction structure per typings (web3 expects it);
     } as any;
 
     return getInstance().eth.accounts.signTransaction(tx, privateKey)
-        .then(signedTx => {
+        .then((signedTx: any) => {
 
             try {
                 // Format the signed transaction
                 const validJson = JSON.stringify(signedTx);
-                // const rawTx = JSON.parse(validJson).rawTransaction;
+                const rawTx = JSON.parse(validJson).rawTransaction;
 
-                return Promise.resolve(signedTx);
+                return Promise.resolve(rawTx);
 
             } catch (error) {
                 return Promise.reject(error);

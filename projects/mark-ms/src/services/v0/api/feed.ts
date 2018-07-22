@@ -35,25 +35,21 @@ function listFeed(req: express.Request, res: express.Response, next: express.Nex
         };
     }
 
-    debug('calling feed');
     return db.marks.listFeed(handle, opts)
         .then(markItems => {
             debug('items', markItems);
             const { items, nextId } = markItems;
-            let next: string;
-            if (nextId) {
-                const nextObject = {
-                    nextId,
-                    nextField: '_id',
-                    nextDirection: '$gte',
-                    limit: opts.limit
-                };
-                const nextObjectString = (nextObject as Object).toString();
-                next = new Buffer(nextObjectString).toString('base64');
-            }
+            const nextObject = {
+                nextId,
+                nextField: '_id',
+                nextDirection: '$gte',
+                limit: opts.limit
+            };
+            const nextObjectString = (nextObject as Object).toString();
+            const next = new Buffer(nextObjectString).toString('base64');
 
             return Promise.resolve(rest.Response.fromSuccess({
-                items: items.map(db.Mark.map),
+                items,
                 next
             }));
 

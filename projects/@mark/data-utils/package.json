@@ -12,7 +12,8 @@
   "license": "MIT",
   "dependencies": {
     "debug": "~2.6.9",
-    "redis": "^2.8.0"
+    "redis": "^2.8.0",
+    "request": "^2.87.0"
   },
   "devDependencies": {
     "@types/node": "^8.0.55",

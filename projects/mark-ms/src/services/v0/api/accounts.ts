@@ -1,7 +1,7 @@
 import * as async from 'async';
 import * as db from '@mark/db';
 import * as express from 'express';
-import { auth, redisConnect, token } from '@mark/data-utils';
+import { auth, redisConnect, token, bots } from '@mark/data-utils';
 import { sns, s3 } from '../../../utils';
 import { authentication, cryptoLib, rest } from '@mark/utils';
 import * as STATUS from 'http-status';
@@ -17,6 +17,7 @@ module.exports = router;
 
 const { authBasic, authAnon, notAllowed } = auth;
 const { verify } = rest;
+const { captchaValidate } = bots;
 const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
 // Routes
@@ -24,7 +25,7 @@ router.route('/info')
     .get(authBasic, verify, respond(info))
     .all(notAllowed);
 router.route('/login')
-    .post(authAnon, verify, respond(login))
+    .post(authAnon, verify, captchaValidate, respond(login))
     .all(notAllowed);
 router.route('/logout')
     .post(authAnon, verify, respond(logout))
@@ -36,7 +37,7 @@ router.route('/signup')
     .post(authAnon, verify, respond(signup))
     .all(notAllowed);
 router.route('/signup-validate')
-    .post(authAnon, verify, respond(signupValidate))
+    .post(authAnon, verify, captchaValidate, respond(signupValidate))
     .all(notAllowed);
 router.route('/update-profile-picture')
     .post(authBasic, verify, upload.single('profile-picture'), respond(uploadProfilePicture))
@@ -147,25 +148,9 @@ function login(req: express.Request, res: express.Response, next: express.NextFu
  * @param next
  * references: https://en.wikipedia.org/wiki/PBKDF2
  */
-function info(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    const { userRecord } = res.locals as auth.BasicAuthFields;
-
-    if (!userRecord.balance) {
-        debug('no balance');
-        return Promise.all([
-            db.users.getBlance(userRecord.handle),
-            db.users.getGasPrice(),
-        ])
-            .then(([balance, gas]) => {
-                debug('balance', balance);
-                debug('gas', gas);
-                userRecord.balance = balance;
-                return Promise.resolve(rest.Response.fromSuccess(db.User.map(userRecord)));
-            });
-    } else {
-        debug('balance');
-        return Promise.resolve(rest.Response.fromSuccess(db.User.map(userRecord)));
-    }
+function info(req: express.Request & { user: IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+    const { userRecord } = res.locals;
+    return Promise.resolve(rest.Response.fromSuccess(db.User.map(userRecord)));
 }
 function signup(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     debug('signup', req.query);
@@ -229,7 +214,6 @@ function signup(req: express.Request, res: express.Response, next: express.NextF
                         .then(([_linkR, _refA, linkPK]) => {
                             refU = _refA;
                             linkR = _linkR;
-                            debug('linkPk', linkPK);
                             debug('linkR', linkR);
                             debug('refA', refU);
                             return db.users.create(userId, handle, refU, linkPK, state);
