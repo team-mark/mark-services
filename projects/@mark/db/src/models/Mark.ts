@@ -1,5 +1,4 @@
 // Database Interface for the Marks (Post) collection
-import { bots } from '@mark/data-utils';
 import { authentication } from '@mark/utils';
 import * as db from '../../';
 import { mongoDb, ipfs } from '../components';

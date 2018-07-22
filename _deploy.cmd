@@ -41,7 +41,7 @@ IF NOT DEFINED NEXT_MANIFEST_PATH (
 IF NOT DEFINED KUDU_SYNC_CMD (
   :: Install kudu sync
   echo Installing Kudu Sync
-  call npm install kudusync -g --silent
+  call npm install --production kudusync -g --silent
   IF !ERRORLEVEL! NEQ 0 goto error
 
   :: Locally just running "kuduSync" would also work
@@ -98,13 +98,13 @@ IF /I "%IN_PLACE_DEPLOYMENT%" NEQ "1" (
 call :SelectNodeVersion
 
 :: 3. Install npm packages
-IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
-  pushd "%DEPLOYMENT_TARGET%"
-  echo "Installing dependencies"
-  call :ExecuteCmd !NPM_CMD! install
-  IF !ERRORLEVEL! NEQ 0 goto error
-  popd
-)
+:: IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
+::   pushd "%DEPLOYMENT_TARGET%"
+::   echo "Installing dependencies"
+::   call :ExecuteCmd !NPM_CMD! install
+::   IF !ERRORLEVEL! NEQ 0 goto error
+::   popd
+:: )
 
 :: 4. Build the webclient
 IF EXIST "%DEPLOYMENT_TARGET%\Gulpfile.js" (

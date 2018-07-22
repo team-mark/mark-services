@@ -7,7 +7,7 @@
     "Ferrante, Jake <jake@droplit.io>"
   ],
   "engines": {
-    "node": "^8.10.0"
+    "node": "=8.10.0"
   },
   "scripts": {
     "start": "node server",
@@ -18,9 +18,6 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
-    "@types/async": "^2.0.49",
-    "@types/aws-sdk": "^2.7.0",
-    "@types/multer": "^1.3.7",
     "async": "^2.6.1",
     "auth0": "2.6.0",
     "aws-sdk": "^2.205.0",
@@ -44,7 +41,12 @@
     "passport-cognito": "^0.1.10",
     "passport-http-bearer": "^1.0.1",
     "passport-oauth2-client-password": "0.1.2",
-    "request": "^2.79.0",
-    "web3": "^1.0.0-beta.34"
+    "request": "^2.79.0"
+  },
+  "devDependencies": {
+    "web3": "^1.0.0-beta.34",
+    "@types/async": "^2.0.49",
+    "@types/aws-sdk": "^2.7.0",
+    "@types/multer": "^1.3.7"
   }
 }
