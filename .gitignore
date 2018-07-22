@@ -10,3 +10,5 @@ projects/mark-ai/src/python/__pycache__/
 projects/mark-ai/embeddings/
 
 projects/mark-ai/models/bot_detection/
+ecosystem.config.js
+*.service
