@@ -46,7 +46,7 @@ function likesSorted(req: express.Request, res: express.Response, next: express.
 function likesOnPost(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     return db.likes.getMarkLikes(req.params.id)
         .then( likes => {
-            return Promise.resolve(rest.Response.fromSuccess({items:likes}));
+            return Promise.resolve(rest.Response.fromSuccess({items: likes}));
         });
 }
 
@@ -65,7 +65,7 @@ function likePost(req: express.Request, res: express.Response, next: express.Nex
 
 function dislikePost(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     return db.likes.removeLike(req.params.id, res.locals.userRecord.handle).then(result => {
-        if(result)
+        if (result)
             return Promise.resolve(rest.Response.fromSuccess());
         else
             return Promise.resolve(rest.Response.fromUnknownError());

@@ -274,4 +274,12 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     public updateOne(query: mongoDb.IFilter, update: mongoDb.IFilter): Promise<UpdateWriteOpResult> {
         return this.collection.updateOne(query, update);
     }
+
+    public count(query: mongoDb.IFilter): Promise<number> {
+        return this.collection.count(query).then(count => {
+            return Promise.resolve(count);
+        }).catch(err => {
+            return Promise.reject(err);
+        });
+    }
 }

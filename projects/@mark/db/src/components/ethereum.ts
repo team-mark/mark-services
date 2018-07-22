@@ -24,7 +24,7 @@ export function addEthereumPost(post: EthereumPost, address: string, key: string
     return new Promise((resolve, reject) => {
         createSignedPostTx(post, address, key)
             .then((signedPostTx: string) => {
-                return getInstance().eth.sendSignedTransaction(signedPostTx, (error, transactionHash) => {
+                return getInstance().eth.sendSignedTransaction(signedPostTx, (error: any, transactionHash: any) => {
                     if (error) {
                         reject(error);
                     } else {
@@ -38,7 +38,7 @@ export function addEthereumPost(post: EthereumPost, address: string, key: string
 // Returns undefined if the transaction does not contain a valid EthereumPost.
 export function getEthereumPost(txHash: string): Promise<EthereumPost> {
     return new Promise((resolve, reject) => {
-        getInstance().eth.getTransaction(txHash, (error, tx) => {
+        getInstance().eth.getTransaction(txHash, (error: any, tx: any) => {
             if (error) {
                 reject(error);
             }
@@ -57,11 +57,11 @@ export function getNewestBlock(): Promise<BlockWithTransactionData> {
 
     return new Promise((resolve, reject) => {
 
-        getInstance().eth.getBlockNumber((error, blockNumber) => {
+        getInstance().eth.getBlockNumber((error: any, blockNumber: any) => {
             if (error) {
                 reject(error);
             } else {
-                getInstance().eth.getBlock(blockNumber, returnTransactionObjects, (error, blockObj) => {
+                getInstance().eth.getBlock(blockNumber, returnTransactionObjects, (error: any, blockObj: any) => {
                     if (error) {
                         reject(error);
                     } else {
@@ -76,7 +76,7 @@ export function getNewestBlock(): Promise<BlockWithTransactionData> {
 
 export function getBlock(blockHashOrBlockNumber: string | number): Promise<BlockWithTransactionData> {
     return new Promise((resolve, reject) => {
-        getInstance().eth.getBlock(blockHashOrBlockNumber, true, (error, blockObj) => {
+        getInstance().eth.getBlock(blockHashOrBlockNumber, true, (error: any, blockObj: any) => {
             if (error) {
                 reject(error);
             } else {
@@ -105,7 +105,7 @@ export function fundAccount(targetAccount: string) {
     return new Promise((resolve, reject) => {
         createSignedFundingTx(txValue, targetAccount, ownerAccount, privateKey)
             .then(signedFundsTx => {
-                return getInstance().eth.sendSignedTransaction(signedFundsTx, (error, transactionHash) => {
+                return getInstance().eth.sendSignedTransaction(signedFundsTx, (error: any, transactionHash: any) => {
                     if (error) {
                         reject(error);
                     } else {
@@ -139,7 +139,7 @@ function createSignedPostTx(post: EthereumPost, address: string, privateKey: str
     } as any;
 
     return getInstance().eth.accounts.signTransaction(tx, privateKey)
-        .then(signedTx => {
+        .then((signedTx: any) => {
 
             try {
                 // Format the signed transaction
@@ -176,7 +176,7 @@ function createSignedFundingTx(amount: number, to: string, from: string, private
     } as any;
 
     return getInstance().eth.accounts.signTransaction(tx, privateKey)
-        .then(signedTx => {
+        .then((signedTx: any) => {
 
             try {
                 // Format the signed transaction
