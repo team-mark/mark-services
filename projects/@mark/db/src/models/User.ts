@@ -174,44 +174,17 @@ export class User extends Model<IUserDb, IUserConsumer> {
         return this.following.findMany(query);
     }
 
-    public addFollower(followerHandle: string, targetHandle: string) {
-        // return this.getByHandle(targetHandle)
-        //     .then(account => {
-        //         if (!account) {
-        //             return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
-        //         } else {
-        //             const { followers } = account;
-        //             const modifications = {
-        //                 followers: followers.concat(followerHandle)
-        //             };
-        //             return this.updateByHandle(targetHandle, modifications);
-        //         }
-        //     });
-
+    public addFollower(owner: string, following: string) {
         const followingRecord: IFollowingDb = {
-            owner: followerHandle,
-            following: targetHandle,
-            hash: Buffer.from(`${followerHandle}:${targetHandle}`).toString('base64')
+            owner,
+            following,
+            hash: Buffer.from(`${owner}:${following}`).toString('base64')
         };
 
         return this.following.insertOne(followingRecord);
     }
 
     public removeFollower(followerHandle: string, targetHandle: string): Promise<any> {
-        // return this.getByHandle(targetHandle)
-        //     .then(account => {
-        //         if (!account) {
-        //             return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
-        //         } else {
-        //             const { followers } = account;
-        //             const modifications = {
-        //                 // filters specified follower handle (does not apply filter where f is not followerHandle)
-        //                 followers: followers.filter(f => f !== followerHandle)
-        //             };
-        //             return this.updateByHandle(targetHandle, modifications);
-        //         }
-        //     });
-
         const followingRecord: IFollowingDb = {
             owner: followerHandle,
             following: targetHandle,
