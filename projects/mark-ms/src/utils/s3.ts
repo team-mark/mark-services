@@ -44,7 +44,7 @@ export function uploadFile(file: MulterFile): Promise<string> {
 
         const binary = fs.readFileSync(filePath);
 
-        const photoKey = `/user/uploads/${filename}`;
+        const photoKey = `user/uploads/${filename}`;
 
         const params = {
             Key: photoKey,
