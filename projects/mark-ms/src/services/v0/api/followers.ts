@@ -5,19 +5,19 @@ import * as db from '@mark/db';
 import { auth } from '@mark/data-utils';
 import { rest } from '@mark/utils';
 import { unwatchFile } from 'fs';
-const debug = require('debug')('mark:users');
+const debug = require('debug')('mark:followers');
 
-const { authBasic } = auth;
-const { verify } = rest;
+const { authBasic, authAnon } = auth;
+const { verify, notAllowed } = rest;
 const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
-router.route('/followers')
+router.route('/')
     .get(authBasic, verify, respond(listFollowers))
-    .all(rest.notAllowed);
-router.route('/followers/:handle')
+    .all(notAllowed);
+router.route('/:handle')
     .put(authBasic, verify, respond(addFollower))
     .delete(authBasic, verify, respond(removeFollower))
-    .all(rest.notAllowed);
+    .all(notAllowed);
 
 // Route definitions
 function getAccount(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
@@ -39,9 +39,10 @@ function listFollowers(req: express.Request, res: express.Response, next: expres
     return db.users.getFollowers(userRecord.handle)
         .then(followers => {
             // const followers = {};
-            return rest.Response.fromSuccess({ followers });
+            return rest.Response.fromSuccess({ items: followers });
         });
 }
+
 function removeFollower(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
 
     const { userRecord } = res.locals;

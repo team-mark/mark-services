@@ -8,8 +8,8 @@ import { IMarkDb } from '@mark/db';
 
 const debug = require('debug')('mark:accounts');
 
-const { authBasic, authAnon, notAllowed } = auth;
-const { verify } = rest;
+const { authBasic, authAnon } = auth;
+const { verify, notAllowed } = rest;
 const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
 // Routes

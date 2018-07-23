@@ -200,7 +200,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                 if (consumableMarks.length === 0) {
                     return Promise.resolve({
                         items: [],
-                        next: undefined
+                        nextId: undefined
                     });
                 }
 

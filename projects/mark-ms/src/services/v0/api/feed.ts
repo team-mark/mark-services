@@ -6,8 +6,8 @@ import { rest } from '@mark/utils';
 import { auth } from '@mark/data-utils';
 const debug = require('debug')('mark:feed');
 
-const { authBasic, authAnon, notAllowed } = auth;
-const { verify } = rest;
+const { authBasic, authAnon } = auth;
+const { verify, notAllowed } = rest;
 const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
 // Routes

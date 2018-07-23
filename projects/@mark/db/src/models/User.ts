@@ -11,6 +11,7 @@ export interface IUserConsumer extends IModelConsumer {
     // link_a: string;
     // ref_a: string;
     balance: string;
+    avatar: string;
 }
 
 // update over in @mark/utils/rest if changes made here
@@ -20,8 +21,8 @@ export interface IUserDb extends IModelDb {
     address: string;
     linkI: string;
     refU: string;
-    followers: string[]; // list of handles
-    following: string[]; // list of handles
+    // followers: string[]; // list of handles
+    // following: string[]; // list of handles
     profilePicture: string;
     balance: string;
 }
@@ -76,6 +77,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
             handle: user.handle,
             address: user.address,
             balance: user.balance,
+            avatar: user.profilePicture,
         };
         return mappedUser;
     }
@@ -106,8 +108,8 @@ export class User extends Model<IUserDb, IUserConsumer> {
             linkI: undefined,
             refU,
             state,
-            followers: [],
-            following: [],
+            // followers: [],
+            // following: [],
             profilePicture: undefined,
             balance: '0'
         };
@@ -160,11 +162,6 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     }
 
-    public _getFollowers(handle: string) {
-        return this.getByHandle(handle)
-            .then(account => Promise.resolve(account.followers));
-    }
-
     public getFollowers(handle: string) {
         const query = { following: handle };
         return this.following.findMany(query);
@@ -200,7 +197,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
         return this.following.insertOne(followingRecord);
     }
 
-    public removeFollower(followerHandle: string, targetHandle: string) {
+    public removeFollower(followerHandle: string, targetHandle: string): Promise<any> {
         // return this.getByHandle(targetHandle)
         //     .then(account => {
         //         if (!account) {
@@ -247,6 +244,20 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public getGasPrice(): Promise<string> {
         debug('getgas');
         return ethereum.getGasPrice();
+    }
+
+    public searchBarQuery(queryString: string): Promise<IUserDb[]> {
+        const DEFAULT_LIMIT = 15;
+        const filter = { handle: { $regex: new RegExp(`.*${queryString}.*`, 'ig') } };
+        const options = {};
+        const sort = {};
+        const limit = DEFAULT_LIMIT;
+
+        return this.query<IUserDb>(filter, options, sort, limit)
+            .then(queryMeta => {
+                const users = queryMeta.items;
+                return Promise.resolve(users);
+            });
     }
 
 }

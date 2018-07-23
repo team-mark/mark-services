@@ -15,8 +15,8 @@ const router = express.Router();
 const debug = require('debug')('mark:accounts');
 module.exports = router;
 
-const { authBasic, authAnon, notAllowed } = auth;
-const { verify } = rest;
+const { authBasic, authAnon, BasicAuthFields } = auth;
+const { verify, notAllowed } = rest;
 const respond = rest.promiseResponseMiddlewareWrapper(debug);
 
 // Routes
@@ -583,12 +583,23 @@ export type MulterFile = {
     buffer: Buffer;
 };
 
-function uploadProfilePicture(req: express.Request & { file: s3.MulterFile, user: db.IUserDb }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    const { file, user } = req;
-    const { handle } = user;
+function uploadProfilePicture(req: express.Request & { file: s3.MulterFile }, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
+    debug('uploadProfilePicture', !!req.file, !!res.locals.user);
 
+    const { file } = req;
+
+    if (!file) {
+        return Promise.resolve(rest.Response.fromBadRequest('image_required', 'no upload provided'));
+    }
+
+    const { userRecord } = res.locals as auth.BasicAuthFields;
+    const { handle } = userRecord;
+
+    debug('file, user, handle', file);
     return s3.uploadFile(file)
         .then(fileUrl => db.users.updateProfilePicture(handle, fileUrl)
-            .then(() => rest.Response.fromSuccess({ url: fileUrl }))
-        );
+            .then(() => rest.Response.fromSuccess({ avatar: fileUrl }))
+            .catch(debug)
+        )
+        .catch(debug);
 }
