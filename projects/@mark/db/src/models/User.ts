@@ -12,6 +12,7 @@ export interface IUserConsumer extends IModelConsumer {
     // ref_a: string;
     balance: string;
     avatar: string;
+    bot: boolean;
 }
 
 // update over in @mark/utils/rest if changes made here
@@ -24,6 +25,7 @@ export interface IUserDb extends IModelDb {
     // followers: string[]; // list of handles
     // following: string[]; // list of handles
     profilePicture: string;
+    bot: boolean;
 }
 
 export interface IFollowingDb extends IModelDb {
@@ -77,6 +79,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
             address: user.address,
             balance: user.balance,
             avatar: user.profilePicture,
+            bot: user.bot
         };
         return mappedUser;
     }
@@ -110,7 +113,8 @@ export class User extends Model<IUserDb, IUserConsumer> {
             // followers: [],
             // following: [],
             profilePicture: undefined,
-            balance: '0'
+            balance: '0',
+            bot: false
         };
 
         debug('user', user);
