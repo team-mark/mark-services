@@ -185,6 +185,13 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                 const { nextId } = marksMeta;
                 consumableMarks = marksMeta.items as any;
 
+                if (consumableMarks.length === 0) {
+                    return Promise.resolve({
+                        items: [],
+                        nextId: undefined
+                    });
+                }
+
                 const hashes = marksMeta.items.map(m => m.ipfs_id);
 
                 return ipfs.getManyIpfsPosts(hashes)

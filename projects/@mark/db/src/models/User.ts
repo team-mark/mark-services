@@ -10,6 +10,8 @@ export interface IUserConsumer extends IModelConsumer {
     address: string;
     // link_a: string;
     // ref_a: string;
+    balance: string;
+    avatar: string;
 }
 
 // update over in @mark/utils/rest if changes made here
@@ -19,8 +21,8 @@ export interface IUserDb extends IModelDb {
     address: string;
     linkI: string;
     refU: string;
-    followers: string[]; // list of handles
-    following: string[]; // list of handles
+    // followers: string[]; // list of handles
+    // following: string[]; // list of handles
     profilePicture: string;
 }
 
@@ -73,7 +75,8 @@ export class User extends Model<IUserDb, IUserConsumer> {
         const mappedUser: IUserConsumer = {
             handle: user.handle,
             address: user.address,
-            // id: User.mapId(user._id)
+            balance: user.balance,
+            avatar: user.profilePicture,
         };
         return mappedUser;
     }
@@ -104,9 +107,10 @@ export class User extends Model<IUserDb, IUserConsumer> {
             linkI: undefined,
             refU,
             state,
-            followers: [],
-            following: [],
-            profilePicture: undefined
+            // followers: [],
+            // following: [],
+            profilePicture: undefined,
+            balance: '0'
         };
 
         debug('user', user);
@@ -157,11 +161,6 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     }
 
-    public _getFollowers(handle: string) {
-        return this.getByHandle(handle)
-            .then(account => Promise.resolve(account.followers));
-    }
-
     public getFollowers(handle: string) {
         const query = { following: handle };
         return this.following.findMany(query);
@@ -172,44 +171,17 @@ export class User extends Model<IUserDb, IUserConsumer> {
         return this.following.findMany(query);
     }
 
-    public addFollower(followerHandle: string, targetHandle: string) {
-        // return this.getByHandle(targetHandle)
-        //     .then(account => {
-        //         if (!account) {
-        //             return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
-        //         } else {
-        //             const { followers } = account;
-        //             const modifications = {
-        //                 followers: followers.concat(followerHandle)
-        //             };
-        //             return this.updateByHandle(targetHandle, modifications);
-        //         }
-        //     });
-
+    public addFollower(owner: string, following: string) {
         const followingRecord: IFollowingDb = {
-            owner: followerHandle,
-            following: targetHandle,
-            hash: Buffer.from(`${followerHandle}:${targetHandle}`).toString('base64')
+            owner,
+            following,
+            hash: Buffer.from(`${owner}:${following}`).toString('base64')
         };
 
         return this.following.insertOne(followingRecord);
     }
 
-    public removeFollower(followerHandle: string, targetHandle: string) {
-        // return this.getByHandle(targetHandle)
-        //     .then(account => {
-        //         if (!account) {
-        //             return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
-        //         } else {
-        //             const { followers } = account;
-        //             const modifications = {
-        //                 // filters specified follower handle (does not apply filter where f is not followerHandle)
-        //                 followers: followers.filter(f => f !== followerHandle)
-        //             };
-        //             return this.updateByHandle(targetHandle, modifications);
-        //         }
-        //     });
-
+    public removeFollower(followerHandle: string, targetHandle: string): Promise<any> {
         const followingRecord: IFollowingDb = {
             owner: followerHandle,
             following: targetHandle,
@@ -229,4 +201,29 @@ export class User extends Model<IUserDb, IUserConsumer> {
             .then(userRecord => ethereum.fundAccount(userRecord.address))
             .then(() => Promise.resolve(undefined));
     }
+
+    public getBlance(handle: string): Promise<string> {
+        return this.getByHandle(handle)
+            .then(userRecord => ethereum.getBalance(userRecord.address));
+    }
+
+    public getGasPrice(): Promise<string> {
+        debug('getgas');
+        return ethereum.getGasPrice();
+    }
+
+    public searchBarQuery(queryString: string): Promise<IUserDb[]> {
+        const DEFAULT_LIMIT = 15;
+        const filter = { handle: { $regex: new RegExp(`.*${queryString}.*`, 'ig') } };
+        const options = {};
+        const sort = {};
+        const limit = DEFAULT_LIMIT;
+
+        return this.query<IUserDb>(filter, options, sort, limit)
+            .then(queryMeta => {
+                const users = queryMeta.items;
+                return Promise.resolve(users);
+            });
+    }
+
 }

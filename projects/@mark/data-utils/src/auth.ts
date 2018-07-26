@@ -37,10 +37,6 @@ export function authAnon(req: express.Request, res: express.Response, next: expr
     next();
 }
 
-export function notAllowed(req: express.Request, res: express.Response, next: express.NextFunction): void {
-    rest.Response.fromNotAllowed().send(res);
-}
-
 export interface BasicAuthFields {
     tokenRecord: db.ITokenDb;
     userRecord: db.IUserDb;

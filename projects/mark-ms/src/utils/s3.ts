@@ -1,4 +1,6 @@
 import * as AWS from 'aws-sdk';
+import * as fs from 'fs';
+import * as path from 'path';
 const debugV = require('debug')('mark-sys:s3');
 
 const {
@@ -31,30 +33,48 @@ export type MulterFile = {
 };
 
 export function uploadFile(file: MulterFile): Promise<string> {
+    debugV('uploadfile', AWS.config);
 
-    const { filename, } = file;
-    const albumPhotosKey = 'uploads';
+    try {
+        const { filename } = file;
+        // const albumPhotosKey = 'uploads/uploads/';
 
-    const photoKey = `${albumPhotosKey}//${filename}`;
+        const filePath = path.resolve(__dirname, path.resolve('uploads', file.filename));
+        debugV('filePath', filePath);
 
-    const params = {
-        Key: photoKey,
-        Body: file,
-        ACL: 'public-read',
-        Bucket: 'mark-resources-public'
-    };
-    const options = {};
+        const binary = fs.readFileSync(filePath);
 
-    return new Promise((resolve, reject) => {
-        s3.upload(params, options, (error: Error, data: AWS.S3.ManagedUpload.SendData) => {
-            if (error) {
-                return reject(error);
-            } else {
-                debugV('uploaded image, data:');
-                debugV(data);
+        const photoKey = `user/uploads/${filename}`;
 
-                resolve(data.Location);
-            }
+        const params = {
+            Key: photoKey,
+            Body: binary,
+            ACL: 'public-read',
+            Bucket: 'mark-resources-public'
+        };
+        const options = {};
+
+        console.log('posting to bucket');
+        debugV(params);
+        return new Promise((resolve, reject) => {
+            s3.upload(params, options, (error: Error, data: AWS.S3.ManagedUpload.SendData) => {
+
+                // remove photo from local storage always
+                fs.unlinkSync(filePath);
+
+                if (error) {
+                    debugV(error);
+                    return reject(error);
+
+                } else {
+                    debugV('uploaded image, data:');
+                    debugV(data);
+                    resolve(data.Location);
+                }
+            });
         });
-    });
+    } catch (e) {
+        debugV(e);
+        return Promise.reject(e);
+    }
 }
