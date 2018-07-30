@@ -13,13 +13,12 @@
   "dependencies": {
     "buffer-xor": "^2.0.2",
     "debug": "~2.6.9",
-    "http-status": "^1.0.1"
-  },
-  "devDependencies": {
+    "http-status": "^1.0.1",
     "@types/http-status": "^0.2.30",
     "@types/node": "^8.0.55",
     "blake2": "^1.4.0",
     "blake2b": "^2.1.2",
     "blake2b-wasm": "^1.1.7"
-  }
+  },
+  "devDependencies": {}
 }

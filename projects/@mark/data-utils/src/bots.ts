@@ -1,7 +1,12 @@
 import * as backbone from './backbone';
 import * as db from '@mark/db';
+import { IMarkConsumer } from '../../db';
+import { marks, ObjectID, users } from '../../db';
+import { rest } from '@mark/utils';
+import * as express from 'express';
 
 const debug = require('debug')('mark:bots');
+const request = require('request');
 
 // Time to wait until classifing Mark in Hours
 const TIME_TO_CHECK = 1;
@@ -12,23 +17,74 @@ export interface BotMessageMetadata {
     percentage1: number;
 }
 
+export function captchaValidate(req: express.Request, res: express.Response, next: express.NextFunction): void {
+    const { CAPTCHA_URL, CAPTCHA_SECRET } = process.env;
+    const { captcha } = req.body;
+
+    const options = {
+        url: CAPTCHA_URL,
+        method: 'POST',
+        json: true,
+        form: {
+            secret: CAPTCHA_SECRET,
+            response: captcha
+        }
+    };
+
+    request(options, (err: any, response: any) => {
+        debug(response.body);
+
+        if (response.body.success)
+            return next();
+        return rest.Response.fromUnauthorized().send(res);
+    });
+}
+
+// gets counts of bot posts and user posts
+// labels user as bot if the account has more bot posts
+// otherwise mark as user
+function classifyUser(handle: string): void {
+    const query = { owner: handle, bot: 'BOT' };
+
+    debug('Classify User');
+
+    marks.count(query).then(botCount => {
+        query.bot = 'USER';
+        marks.count(query).then(userCount => {
+            let update = {};
+
+            debug(`botCount = ${botCount} userCount = ${userCount}`);
+
+            if (botCount > userCount)
+                update = { $set: { bot: true } };
+            else
+                update = { $set: { bot: false} };
+            users.updateByHandle(handle, update);
+        }).catch(err => {
+            debug(err);
+        });
+    }).catch(error => {
+        debug(error);
+    });
+}
+
 // retrieves Marks that need to be classified by user
-function getMarksForBotCheck(user: string): Promise<db.IMarkConsumer []> {
+function getMarksForBotCheck(user: string): Promise<IMarkConsumer []> {
     const date = new Date();
 
     date.setHours(date.getHours() - TIME_TO_CHECK);
     const query = { createdAt: {$lt: date}, bot: 'UNKNOWN', owner: user};
 
-    return db.marks.getMarks(1, 0, 50, query);
+    return marks.getMarks(1, 0, 50, query);
 }
 
 // updates Mark bot flag on mongo
-function classifyMark(mark: db.IMarkConsumer) {
+function classifyMark(mark: IMarkConsumer) {
     debug(`Classifying ${mark.body}`);
     const response = submitMessage(mark.body);
 
     response.then(botClass => {
-        const query = {_id: new db.ObjectID(mark.id)};
+        const query = {_id: new ObjectID(mark.id)};
         let update = {};
 
         debug(`Classifier response: ${botClass.class}`);
@@ -40,8 +96,8 @@ function classifyMark(mark: db.IMarkConsumer) {
 
         debug(`Updating Mark document ${mark.id}`);
 
-        db.marks.updateOne(query, update)
-            .then(res => {
+        marks.updateOne(query, update)
+            .then( res => {
                 debug(`update result: ${res.result.nModified}`);
             });
     });
@@ -59,6 +115,7 @@ export function runBotCheck(user: string) {
                 classifyMark(element);
             });
         });
+    classifyUser(user);
 }
 
 // Sends Mark to ai service for classification

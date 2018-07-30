@@ -11,6 +11,8 @@ export interface IUserConsumer extends IModelConsumer {
     // link_a: string;
     // ref_a: string;
     balance: string;
+    avatar: string;
+    bot: boolean;
 }
 
 // update over in @mark/utils/rest if changes made here
@@ -20,10 +22,10 @@ export interface IUserDb extends IModelDb {
     address: string;
     linkI: string;
     refU: string;
-    followers: string[]; // list of handles
-    following: string[]; // list of handles
+    // followers: string[]; // list of handles
+    // following: string[]; // list of handles
     profilePicture: string;
-    balance: string;
+    bot: boolean;
 }
 
 export interface IFollowingDb extends IModelDb {
@@ -76,6 +78,8 @@ export class User extends Model<IUserDb, IUserConsumer> {
             handle: user.handle,
             address: user.address,
             balance: user.balance,
+            avatar: user.profilePicture,
+            bot: user.bot
         };
         return mappedUser;
     }
@@ -106,10 +110,11 @@ export class User extends Model<IUserDb, IUserConsumer> {
             linkI: undefined,
             refU,
             state,
-            followers: [],
-            following: [],
+            // followers: [],
+            // following: [],
             profilePicture: undefined,
-            balance: '0'
+            balance: '0',
+            bot: false
         };
 
         debug('user', user);
@@ -124,7 +129,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     public updateById(id: string | object, modifications: any): Promise<IUserDb> {
         const filter = { _id: User.formatId(id) };
-        const update = { $set: { ...modifications } };
+        const update = modifications;
         // forced 'as any' to comply with typiungs. Typings are set to 3.0, but
         // database is setup for 3.6 and these options are compliant with 3.6.
         // see https://docs.mongodb.com/manual/reference/method/db.collection.findOneAndUpdate/#db-collection-findoneandupdate
@@ -155,14 +160,9 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     public updateByHandle(handle: string, modifications: any) {
         const filter: mongoDb.IFilter<IUserDb> = { handle };
-        return this.users.updateOne(filter, { $set: { ...modifications } })
+        return this.users.updateOne(filter, modifications)
             .then(updateWriteOpResult => Promise.resolve());
 
-    }
-
-    public _getFollowers(handle: string) {
-        return this.getByHandle(handle)
-            .then(account => Promise.resolve(account.followers));
     }
 
     public getFollowers(handle: string) {
@@ -172,49 +172,20 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     public getFollowing(handle: string) {
         const query = { owner: handle };
-        debug('query', query);
-        debug('this.following', this.following);
         return this.following.findMany(query);
     }
 
-    public addFollower(followerHandle: string, targetHandle: string) {
-        // return this.getByHandle(targetHandle)
-        //     .then(account => {
-        //         if (!account) {
-        //             return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
-        //         } else {
-        //             const { followers } = account;
-        //             const modifications = {
-        //                 followers: followers.concat(followerHandle)
-        //             };
-        //             return this.updateByHandle(targetHandle, modifications);
-        //         }
-        //     });
-
+    public addFollower(owner: string, following: string) {
         const followingRecord: IFollowingDb = {
-            owner: followerHandle,
-            following: targetHandle,
-            hash: Buffer.from(`${followerHandle}:${targetHandle}`).toString('base64')
+            owner,
+            following,
+            hash: Buffer.from(`${owner}:${following}`).toString('base64')
         };
 
         return this.following.insertOne(followingRecord);
     }
 
-    public removeFollower(followerHandle: string, targetHandle: string) {
-        // return this.getByHandle(targetHandle)
-        //     .then(account => {
-        //         if (!account) {
-        //             return Promise.reject(new Error(`User with handle '${targetHandle}' does not exist.`));
-        //         } else {
-        //             const { followers } = account;
-        //             const modifications = {
-        //                 // filters specified follower handle (does not apply filter where f is not followerHandle)
-        //                 followers: followers.filter(f => f !== followerHandle)
-        //             };
-        //             return this.updateByHandle(targetHandle, modifications);
-        //         }
-        //     });
-
+    public removeFollower(followerHandle: string, targetHandle: string): Promise<any> {
         const followingRecord: IFollowingDb = {
             owner: followerHandle,
             following: targetHandle,
@@ -232,11 +203,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public fundUserAccount(handle: string): Promise<void> {
         return this.getByHandle(handle)
             .then(userRecord => ethereum.fundAccount(userRecord.address))
-            .then(res => {
-                const eth = W3.getInstance().utils.fromWei(res.tx.v, 'ether');
-                return this.updateByHandle(handle, { balance: eth });
-            })
-            .then(updateResult => Promise.resolve(undefined));
+            .then(() => Promise.resolve(undefined));
     }
 
     public getBlance(handle: string): Promise<string> {
@@ -247,6 +214,20 @@ export class User extends Model<IUserDb, IUserConsumer> {
     public getGasPrice(): Promise<string> {
         debug('getgas');
         return ethereum.getGasPrice();
+    }
+
+    public searchBarQuery(queryString: string): Promise<IUserDb[]> {
+        const DEFAULT_LIMIT = 15;
+        const filter = { handle: { $regex: new RegExp(`.*${queryString}.*`, 'ig') } };
+        const options = {};
+        const sort = {};
+        const limit = DEFAULT_LIMIT;
+
+        return this.query<IUserDb>(filter, options, sort, limit)
+            .then(queryMeta => {
+                const users = queryMeta.items;
+                return Promise.resolve(users);
+            });
     }
 
 }

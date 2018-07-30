@@ -92,13 +92,10 @@ function getDependencyList(project) {
         projectNames.forEach(name => resolver.add(name));
         projectNames.forEach(projectName => {
             (projectConfig[projectName].dependencies || []).forEach(dep => {
-                console.log(`${projectName} ++ ${dep}`)
                 resolver.setDependency(projectName, dep);
             });
         });
     }
-
-    console.log('resolver', resolver.services)
     return resolver.resolve(project);
 }
 
@@ -134,7 +131,7 @@ const projTaskOpts = {
     }
 };
 
-// DO NOT CHANGE DEFAULT TASK - Azure depends on it
+// DO NOT CHANGE DEFAULT TASK-Azure depends on it
 gulp.task('default', false, defaultTask);
 
 gulp.task('debug', 'Run the project and auto-restart for changes', debugTask, projTaskOpts);
@@ -144,7 +141,10 @@ gulp.task('startup', false, startupTask);
 
 function debugTask(project, debug, port) {
 
-    const debugScope = debug || process.env.DEBUG || 'mark*';
+    console.log('project, debug, port')
+    console.log(project, debug, port)
+
+    const debugScope = 'mark*';
     if (project === undefined)
         return console.log('You must specify a project');
     console.log(`debugging projects/${project} with DEBUG=${debugScope}`);
@@ -159,9 +159,11 @@ function debugTask(project, debug, port) {
         script: `${project}.js`,
         ext: 'js',
         env: {
+            ...process.env,
             APP_NAME: project,
             ENVIRONMENT: 'development',
-            DEBUG: debugScope
+            DEBUG: debugScope,
+            NODE_PATH: './projects'
         },
         delay: 1, // Sec
         watch: [
@@ -178,6 +180,7 @@ function debugTask(project, debug, port) {
     }
     if (!projectConfig[project]) {
         console.error(`"${project}" is not a valid project.`);
+        console.error(projectConfig);
         process.exit(1);
     }
     // Watch project dependencies for changes
@@ -185,7 +188,7 @@ function debugTask(project, debug, port) {
         projectConfig[project].dependencies.forEach(dep => {
             // Watch
             args.watch.push(`projects/${dep}`);
-            // Ignore
+            //    Ignore
             args.ignore.push(`projects/${dep}/src`);
             args.ignore.push(`projects/${dep}/node_modules`);
             args.ignore.push(`projects/${dep}/nodemon_ignore`);
@@ -225,15 +228,8 @@ function initMainTask() {
         .pipe(gulp.dest('.'));
 }
 
-gulp.task('copy-precompiled', 'Copy pre-compiled files to projects/', copyPrecompiledTask);
-
-function copyPrecompiledTask() {
-    return gulp.src(`./precompiled/**/*`)
-        .pipe(gulp.dest('.'));
-}
-
 function startupTask(callback) {
-    G$.sequence('clean-main', ['install-main', 'init-main'], 'build-main', 'copy-precompiled', callback);
+    G$.sequence('clean-main', ['install-main', 'init-main'], 'build-main', callback);
 }
 
 // Setup tasks
@@ -241,7 +237,7 @@ gulp.task('setup', 'Install all modules', setupTask);
 gulp.task('teardown', 'Clean all', teardownTask);
 
 function setupTask(callback) {
-    G$.sequence('install', callback);
+    G$.sequence('install', 'link', callback);
 }
 
 function teardownTask(callback) {
@@ -266,12 +262,10 @@ function installMainTask(callback) {
     const commands = [];
     deps.forEach(name => {
         // npm install
-        commands.push({ cmd: 'npm install --production', cwd: `projects/${name}` });
+        commands.push({ cmd: 'npm install --build-from-source', cwd: `projects/${name}` });
     });
     runCommands(commands, true, callback);
 }
-
-
 
 // NPM link tasks
 gulp.task('link', 'Link dependencies on local disk', linkTask);
@@ -315,7 +309,7 @@ projectNames.forEach(name => {
             .pipe(G$.tslint({ formatter: 'stylish' }))
             .pipe(G$.tslint.report({ emitError: false }));
     };
-    gulp.task(`tslint-${name}`, `Lints all ${chalk.green(name)} TypeScript source files `, tsLintTasks[name]);
+    gulp.task(`tslint-${name}`, `Lints all ${chalk.green(name)} TypeScript source files`, tsLintTasks[name]);
 });
 
 function tsLintTask() {
@@ -457,6 +451,8 @@ const tsTasks = {};
 projectNames.forEach(name =>
     gulp.task(`ts-${name}`, `Transpile ${chalk.green(name)}`, transpileProjects([name])));
 
+gulp.task(`ts-${APP_NAME}`, `Transpile ${chalk.green(APP_NAME)}`, transpileProjects([APP_NAME]));
+
 // Testing tasks
 gulp.task('test', 'Runs all tests', ['test-clean', 'test-build'], testTask);
 gulp.task('test-build', 'Transpile all test files', testBuildTask);
@@ -507,8 +503,8 @@ function testBuildTask(callback) {
 const bumpOpts = {
     options: {
         major: 'when you make incompatible API changes',
-        minor: 'when you add functionality in a backwards - compatible manner',
-        patch: 'when you make backwards - compatible bug fixes',
+        minor: 'when you add functionality in a backwards-compatible manner',
+        patch: 'when you make backwards-compatible bug fixes',
         project: `Project name: ${chalk.green(projectNames.join(chalk.white(', ')))}`
     }
 };
@@ -523,7 +519,7 @@ gulp.task('bump', 'Version bump a project.', function (major, minor, patch, proj
     if (!type)
         return console.log(`${chalk.red('Specify one version type to bump!')}`);
 
-    const cwd = `projects/${project}/`;
+    const cwd = `projects/${project}/ `;
     return gulp.src('./package.json', { cwd })
         .pipe(G$.bump({ type }))
         .pipe(gulp.dest('./', { cwd }));
@@ -536,13 +532,13 @@ gulp.task('npm-u', `Uninstall and save a ${chalk.cyan('pack')}age to a ${chalk.c
 gulp.task('stats', 'Get lines of code', statsTask, projTaskOpts);
 
 function npmInstallTask(project, pack, callback) {
-    runCommand(`npm install --save ${pack}`, { cwd: mapPath(settings.projectPath, project) }, function () {
+    runCommand(`npm install--save ${pack}`, { cwd: mapPath(settings.projectPath, project) }, function () {
         callback();
     });
 }
 
 function npmUninstallTask(project, pack, callback) {
-    runCommand(`npm uninstall --save ${pack}`, { cwd: mapPath(settings.projectPath, project) }, function () {
+    runCommand(`npm uninstall--save ${pack}`, { cwd: mapPath(settings.projectPath, project) }, function () {
         callback();
     });
 }

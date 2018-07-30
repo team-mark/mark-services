@@ -123,6 +123,5 @@ export function verify(req: express.Request, res: express.Response, next: expres
 }
 
 export function notAllowed(req: express.Request, res: express.Response, next: express.NextFunction): void {
-    const restResponse = Response.fromNotFound();
-    restResponse.send(res);
+    Response.fromNotAllowed().send(res);
 }

@@ -1,6 +1,6 @@
 // Database Interface for the Marks (Post) collection
-// import { bots } from '@mark/data-utils';
 import { authentication } from '@mark/utils';
+import * as db from '../../';
 import { mongoDb, ipfs } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
 import { User } from './User';
@@ -10,8 +10,8 @@ import { addIpfsPost, getManyIpfsPosts } from '../components/ipfs';
 import { IUserDb } from './User';
 import { ethereum } from '../components';
 import { UpdateWriteOpResult } from 'mongodb';
+
 const debug = require('debug')('mark:Mark');
-import * as util from 'util';
 
 export interface IMarkConsumer extends IModelConsumer {
     ethereum_id: string;
@@ -34,13 +34,9 @@ const TIME_CONST = 1527699872;
 
 export class Mark extends Model<IMarkDb, IMarkConsumer> {
     private marks: mongoDb.ICollection<Mark>;
-    // this.users: mongoDb.ICollectionDb
-    private users: User;
 
     public constructor() {
         super(COLLECTION_NAME);
-        this.users = new User();
-
     }
 
     // 11.7.1.1 Algortihm 2 as defined in Mark Design Document
@@ -69,12 +65,12 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             return Math.log10(popularity) + 4500 / (time - TIME_CONST);
     }
 
-    public static map(mark: IMarkDb & { body: string }): IMarkConsumer {
+    public static map(mark: IMarkDb): IMarkConsumer {
         const mapped: IMarkConsumer = {
             id: mark._id.toString(),
             ethereum_id: mark.ethereum_id,
-            body: mark.body,
-            owner: mark.owner,
+            body: null,
+            owner: null,
             createdAt: mark.createdAt.toDateString(),
         };
 
@@ -82,24 +78,24 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
     }
 
     // Assembles IMarkConsumers given a list of MongoDb Mark documents
-    // private static assembleMarks(marks: IMarkDb[]): Promise<IMarkConsumer[]> {
-    //     const hashes: string[] = [];
-    //     const consumer: IMarkConsumer[] = [];
+    private static assembleMarks(marks: IMarkDb[]): Promise<IMarkConsumer[]> {
+        const hashes: string[] = [];
+        const consumer: IMarkConsumer[] = [];
 
-    //     marks.forEach((mark, index) => {
-    //         hashes.push(mark.ethereum_id);
-    //         consumer.push(Mark.map(mark));
-    //     });
+        marks.forEach((mark, index) => {
+            hashes.push(mark.ethereum_id);
+            consumer.push(Mark.map(mark));
+        });
 
-    //     return getManyIpfsPosts(hashes)
-    //         .then(ipfs_posts => {
-    //             for (let i = 0; i < ipfs_posts.length; i++) {
-    //                 consumer[i].body = ipfs_posts[i].content;
-    //                 consumer[i].owner = ipfs_posts[i].author;
-    //             }
-    //             return Promise.resolve(consumer);
-    //         });
-    // }
+        return getManyIpfsPosts(hashes)
+            .then(ipfs_posts => {
+                for (let i = 0; i < ipfs_posts.length; i++) {
+                    consumer[i].body = ipfs_posts[i].content;
+                    consumer[i].owner = ipfs_posts[i].author;
+                }
+                return Promise.resolve(consumer);
+            });
+    }
 
     /**
      * Returns Marks by time created
@@ -107,36 +103,36 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
      * @param skip      Number of records to skip
      * @param size      Number of records to return
     */
-    // public getMarks(sort: number, skip: number, size: number, query?: mongoDb.IFilter): Promise<IMarkConsumer[]> {
-    //     const cursor: mongoDb.ICursor<IMarkDb> = this.collection.find(query);
+    public getMarks(sort: number, skip: number, size: number, query?: mongoDb.IFilter): Promise<IMarkConsumer[]> {
+        const cursor: mongoDb.ICursor<IMarkDb> = this.collection.find(query);
 
-    //     if (sort === 1 || sort === -1)
-    //         cursor.sort({ createdAt: sort });
-    //     cursor.skip(skip);
-    //     cursor.limit(size);
+        if (sort === 1 || sort === -1)
+            cursor.sort({ createdAt: sort });
+        cursor.skip(skip);
+        cursor.limit(size);
 
-    //     return cursor.toArray()
-    //         .then(marks => {
-    //             return Mark.assembleMarks(marks);
-    //         }, error => {
-    //             console.log(error);
-    //             return Promise.reject(new Error('Internal error'));
-    //         });
-    // }
+        return cursor.toArray()
+            .then(marks => {
+                return Mark.assembleMarks(marks);
+            }, error => {
+                console.log(error);
+                return Promise.reject(new Error('Internal error'));
+            });
+    }
 
-    // public getMarksAggregate(query: mongoDb.IFilter<IMarkDb>[], skip?: number, size?: number): Promise<IMarkConsumer[]> {
-    //     const cursor: mongoDb.IAggregationCursor<IMarkDb> = this.aggregate(query);
+    public getMarksAggregate(query: mongoDb.IFilter<IMarkDb>[], skip?: number, size?: number): Promise<IMarkConsumer[]> {
+        const cursor: mongoDb.IAggregationCursor<IMarkDb> = this.aggregate(query);
 
-    //     if (skip)
-    //         cursor.skip(skip);
-    //     if (size)
-    //         cursor.limit(size);
+        if (skip)
+            cursor.skip(skip);
+        if (size)
+            cursor.limit(size);
 
-    //     return cursor.toArray()
-    //         .then(marks => {
-    //             return Mark.assembleMarks(marks);
-    //         });
-    // }
+        return cursor.toArray()
+            .then(marks => {
+                return Mark.assembleMarks(marks);
+            });
+    }
 
     /**
      *
@@ -150,17 +146,15 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             nextField?: string
             nextId?: string
             nextDirection?: mongoDb.NextQueryDirection
-        }) {
-        //      : Promise<{
-        //     items: IMarkConsumer[],
-        //     nextId: string,
-        // }> {
+        }): Promise<{
+            items: IMarkConsumer[],
+            nextId: string,
+        }> {
 
         const DEFAULT_LIMIT = 100;
-        const postOwners: string[] = [];
+        let postOwners: string[];
 
-        // const filter = { $or: [{ owner: { $in: postOwners } }] };
-        const filter = { owner: { $in: postOwners } };
+        const filter = { $or: { owner: { $in: postOwners } } };
         const options = {};
         const sort = {};
         const { nextDirection, nextField, nextId } = opts;
@@ -169,38 +163,32 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
 
         let consumableMarks: IMarkConsumer[] = [];
 
-        debug('get following');
-        return this.users.getFollowing(handle)
+        return db.users.getFollowing(handle)
             .then(following => {
-                debug('following', following);
-
-                following
+                postOwners = following
                     .map(f => f.following)
-                    .concat(handle)
-                    .forEach(f => postOwners.push(f));
-
-                debug('postOwners', postOwners);
-                debug('now query', util.inspect(filter, true, undefined));
-                return this.query<IMarkDb>(
-                    filter,
-                    options,
-                    sort,
-                    limit,
-                    nextField,
-                    nextId,
-                    nextDirection
-                );
+                    .concat(handle);
+                Promise.resolve();
             })
-            .then<any>(marksMeta => {
+            .then(() => this.query<IMarkDb>(
+                filter,
+                options,
+                sort,
+                limit,
+                nextField,
+                nextId,
+                nextDirection
+            ))
+            .then(marksMeta => {
 
-                debug('markMeta', marksMeta);
+                debug('markMeta');
                 const { nextId } = marksMeta;
                 consumableMarks = marksMeta.items as any;
 
                 if (consumableMarks.length === 0) {
                     return Promise.resolve({
                         items: [],
-                        next: undefined
+                        nextId: undefined
                     });
                 }
 
@@ -214,7 +202,6 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                         // Update consumable marks content
                         ipfsPosts.forEach((post, index) => {
                             consumableMarks[index].body = post.content;
-                            // consumableMarks[index].owner = post.author;
                         });
 
                         return Promise.resolve({
@@ -222,13 +209,13 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                             nextId
                         });
                     });
-            })
-            .catch(error => debug(error));
+            });
+        // .catch(error => debug(error));
     }
 
     public getByOwner(handle: string): Promise<IMarkDb[]> {
         const filter = { owner: handle };
-        return this.findMany(filter);
+        return db.marks.findMany(filter);
     }
 
     /**
@@ -292,5 +279,13 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
 
     public updateOne(query: mongoDb.IFilter, update: mongoDb.IFilter): Promise<UpdateWriteOpResult> {
         return this.collection.updateOne(query, update);
+    }
+
+    public count(query: mongoDb.IFilter): Promise<number> {
+        return this.collection.count(query).then(count => {
+            return Promise.resolve(count);
+        }).catch(err => {
+            return Promise.reject(err);
+        });
     }
 }
