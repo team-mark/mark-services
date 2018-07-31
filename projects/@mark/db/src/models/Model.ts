@@ -1,7 +1,7 @@
 import { mongoDb } from '../components';
 import * as mongo from 'mongodb';
 import { cryptoLib } from '@mark/utils';
-import { IAccountInfoDb } from './index';
+import { IAccountInfoDb } from '.';
 const debug = require('debug')('mark:Model');
 
 // Data structure to be passed and retrieved from

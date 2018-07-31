@@ -1,3 +1,3 @@
-import * as index from './src';
+import * as index from './src/app';
 
 export = index;

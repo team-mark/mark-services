@@ -1,6 +1,6 @@
 // Database Interface for the Marks (Post) collection
 import { authentication } from '@mark/utils';
-import * as db from '../../';
+import * as db from '../..';
 import { mongoDb, ipfs } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
 import { User } from './User';
