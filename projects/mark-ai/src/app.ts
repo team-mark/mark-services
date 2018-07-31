@@ -10,7 +10,7 @@ const routes = require('./routes');
 
 const app = express();
 
-// bot.init();
+bot.init();
 
 // Enable CORS for all endpoints
 app.use(cors());
@@ -46,5 +46,3 @@ app.use(function (err: Error & { status: number }, req: express.Request, res: ex
 });
 
 module.exports = app;
-
-
