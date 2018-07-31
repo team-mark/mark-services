@@ -12,15 +12,20 @@ const {
     REDIS_PORT,
     REDIS_HOST: host,
     REDIS_SECRET
- } = process.env;
+} = process.env;
 const port = +REDIS_PORT;
 
 let pythonProcess;
 
+import * as path from 'path';
+
+const scriptPath = path.resolve(__dirname, '../python/mark_ai_service.py');
+
 // Starts python bot classification script
 export function init() {
     debug('starting bot');
-    pythonProcess = spawn('python3', ['./projects/mark-ai/src/python/mark_ai_service.py',
+    pythonProcess = spawn('python3', [
+        scriptPath,
         '-h', host,
         '-s', REDIS_SECRET,
         '-p', REDIS_PORT]);
@@ -29,5 +34,5 @@ export function init() {
     });
     pythonProcess.stderr.on('data', data => {
         debug(`Error: ${data}`);
-      });
+    });
 }
