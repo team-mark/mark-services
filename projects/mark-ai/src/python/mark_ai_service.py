@@ -101,12 +101,11 @@ def main(argv):
     embeddingsPath = Path(pythonDir + "../../../embeddings/glove.twitter.27B.25d.txt").resolve()
     predictFnPath = Path(pythonDir + "../../../models/bot_detection").resolve()
      
-
     print('embedding path', embeddingsPath)
     print('predict path', predictFnPath)
 
     word2id, _ = i_data.load_embeddings(embeddingsPath)
-    predict_fn = predictor.from_saved_model(predictFnPath)
+    predict_fn = predictor.from_saved_model(bytes(predictFnPath))
     thread = Thread(target=run_model, kwargs=dict(
                                                 stop=stop,  # Thread Stop signal  
                                                 q=q,        # Queue of Marks to run through predict_fn
