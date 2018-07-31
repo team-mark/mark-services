@@ -20,7 +20,7 @@ let pythonProcess;
 // Starts python bot classification script
 export function init() {
     debug('starting bot');
-    pythonProcess = spawn('python', ['./projects/mark-ai/src/python/mark_ai_service.py',
+    pythonProcess = spawn('python3', ['./projects/mark-ai/src/python/mark_ai_service.py',
         '-h', host,
         '-s', REDIS_SECRET,
         '-p', REDIS_PORT]);
