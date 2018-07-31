@@ -11,6 +11,7 @@ import getopt
 from tensorflow.python.keras.preprocessing import sequence
 from threading import Event, Thread
 from tensorflow.contrib import predictor
+from pathlib import Path
 
 
 CONFIG = {
@@ -93,8 +94,16 @@ def main(argv):
     stop = Event()
     q = queue.Queue()
 
-    embeddingsPath = os.getcwd() + "/projects/mark-ai/embeddings/glove.twitter.27B.25d.txt"
-    predictFnPath = os.getcwd() + '/projects/mark-ai/models/bot_detection'
+
+    pythonDir = os.path.dirname(os.path.abspath(__file__))
+
+    
+    embeddingsPath = Path(pythonDir + "../../../embeddings/glove.twitter.27B.25d.txt").resolve()
+    predictFnPath = Path(pythonDir + "../../../models/bot_detection").resolve()
+     
+
+    print('embedding path', embeddingsPath)
+    print('predict path', predictFnPath)
 
     word2id, _ = i_data.load_embeddings(embeddingsPath)
     predict_fn = predictor.from_saved_model(predictFnPath)
