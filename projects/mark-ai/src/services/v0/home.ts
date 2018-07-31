@@ -10,7 +10,7 @@ router.get('/welcome', welcome);
 // Route definitions
 function index(req: express.Request, res: express.Response, next: express.NextFunction): void {
   res.render('index', {
-    title: 'Node JS API App'
+    title: 'Mark AI'
   });
 }
 
