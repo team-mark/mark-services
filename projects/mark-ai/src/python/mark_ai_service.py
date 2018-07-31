@@ -1,3 +1,4 @@
+import os
 import queue
 import import_data as i_data
 import tensorflow as tf
@@ -91,8 +92,12 @@ def main(argv):
     red = redis.StrictRedis(**CONFIG)
     stop = Event()
     q = queue.Queue()
-    word2id, _ = i_data.load_embeddings("./projects/mark-ai/embeddings/glove.twitter.27B.25d.txt")
-    predict_fn = predictor.from_saved_model('./projects/mark-ai/models/bot_detection')
+
+    embeddingsPath = os.getcwd() + "/projects/mark-ai/embeddings/glove.twitter.27B.25d.txt"
+    predictFnPath = os.getcwd() + '/projects/mark-ai/models/bot_detection'
+
+    word2id, _ = i_data.load_embeddings(embeddingsPath)
+    predict_fn = predictor.from_saved_model(predictFnPath)
     thread = Thread(target=run_model, kwargs=dict(
                                                 stop=stop,  # Thread Stop signal  
                                                 q=q,        # Queue of Marks to run through predict_fn
