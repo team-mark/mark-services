@@ -1,6 +1,5 @@
 // Database Interface for the Marks (Post) collection
 import { authentication } from '@mark/utils';
-import * as db from '../..';
 import { mongoDb, ipfs } from '../components';
 import Model, { IModelConsumer, IModelDb } from './Model';
 import { User } from './User';
@@ -33,10 +32,13 @@ const COLLECTION_NAME = 'marks';
 const TIME_CONST = 1527699872;
 
 export class Mark extends Model<IMarkDb, IMarkConsumer> {
-    private marks: mongoDb.ICollection<Mark>;
+    private marks:  mongoDb.ICollection<IMarkDb>;
+    private users: User;
 
     public constructor() {
         super(COLLECTION_NAME);
+        this.marks = this.collection;
+        this.users = new User();
     }
 
     // 11.7.1.1 Algortihm 2 as defined in Mark Design Document
@@ -152,9 +154,9 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         }> {
 
         const DEFAULT_LIMIT = 100;
-        let postOwners: string[];
+        const postOwners: string[] = [];
 
-        const filter = { $or: { owner: { $in: postOwners } } };
+        const filter = { $or: [{ owner: { $in: postOwners } }] };
         const options = {};
         const sort = {};
         const { nextDirection, nextField, nextId } = opts;
@@ -163,11 +165,14 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
 
         let consumableMarks: IMarkConsumer[] = [];
 
-        return db.users.getFollowing(handle)
+        // console.log('about to get following');
+
+        return this.users.getFollowing(handle)
             .then(following => {
-                postOwners = following
+                // console.log('following', following.length);
+                postOwners.concat(following
                     .map(f => f.following)
-                    .concat(handle);
+                    .concat(handle));
                 Promise.resolve();
             })
             .then(() => this.query<IMarkDb>(
@@ -215,7 +220,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
 
     public getByOwner(handle: string): Promise<IMarkDb[]> {
         const filter = { owner: handle };
-        return db.marks.findMany(filter);
+        return this.findMany(filter);
     }
 
     /**
