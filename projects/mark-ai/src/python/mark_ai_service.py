@@ -97,21 +97,26 @@ def main(argv):
 
     pythonDir = os.path.dirname(os.path.abspath(__file__))
 
-    
-    embeddingsPath = Path(pythonDir + "../../../embeddings/glove.twitter.27B.25d.txt").resolve()
-    predictFnPath = Path(pythonDir + "../../../models/bot_detection").resolve()
-     
+    print('pythonDir', pythonDir)
+    print('out2', Path(pythonDir, "../../embeddings").resolve())
+    print('embed', Path(pythonDir, "../../embeddings/glove.twitter.27B.25d.txt").resolve())
+    print('predict', Path(pythonDir, "../../models/bot_detection").resolve())
+
+    embeddingsPath = str(Path(pythonDir, "../../embeddings/glove.twitter.27B.25d.txt").resolve())
+    predictFnPath =  str(Path(pythonDir, "../../models/bot_detection").resolve())
+
     print('embedding path', embeddingsPath)
     print('predict path', predictFnPath)
 
     word2id, _ = i_data.load_embeddings(embeddingsPath)
-    predict_fn = predictor.from_saved_model(bytes(predictFnPath))
+    predict_fn = predictor.from_saved_model(bytes(predictFnPath, 'utf8'))
     thread = Thread(target=run_model, kwargs=dict(
-                                                stop=stop,  # Thread Stop signal  
+                                                stop=stop,  # Thread Stop signal
                                                 q=q,        # Queue of Marks to run through predict_fn
-                                                predict_fn=predict_fn, 
-                                                word2id=word2id, # dictionary for common words to word ids 
+                                                predict_fn=predict_fn,
+                                                word2id=word2id, # dictionary for common words to word ids
                                                 red=red))        # redis connection instance (thread safe)
+
     
     thread.start()
     
