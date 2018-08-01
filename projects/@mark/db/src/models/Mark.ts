@@ -17,6 +17,7 @@ export interface IMarkConsumer extends IModelConsumer {
     owner: string;
     body: string;
     score?: number;
+    bot: string;
 }
 
 export interface IMarkDb extends IModelDb {
@@ -24,6 +25,7 @@ export interface IMarkDb extends IModelDb {
     owner: string;
     ethereum_id: string;
     ipfs_id: string;
+    bot: string;
 }
 
 const COLLECTION_NAME = 'marks';
@@ -74,6 +76,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             body: null,
             owner: null,
             createdAt: mark.createdAt.toDateString(),
+            bot: mark.bot
         };
 
         return mapped;
