@@ -32,7 +32,7 @@ const COLLECTION_NAME = 'marks';
 const TIME_CONST = 1527699872;
 
 export class Mark extends Model<IMarkDb, IMarkConsumer> {
-    private marks:  mongoDb.ICollection<IMarkDb>;
+    private marks: mongoDb.ICollection<IMarkDb>;
     private users: User;
 
     public constructor() {
@@ -170,9 +170,12 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         return this.users.getFollowing(handle)
             .then(following => {
                 // console.log('following', following.length);
-                postOwners.concat(following
+                following
                     .map(f => f.following)
-                    .concat(handle));
+                    .concat(handle)
+                    .forEach(h => postOwners.push(h));
+                debug('postOwners', postOwners);
+                debug('filter', filter);
                 Promise.resolve();
             })
             .then(() => this.query<IMarkDb>(

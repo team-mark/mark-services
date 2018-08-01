@@ -16,24 +16,26 @@ router.route('/')
     .all(notAllowed);
 
 function listFeed(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
-    const { options } = req.query;
+    // const { options } = req.query;
     const { userRecord } = res.locals;
     const { handle } = userRecord;
 
-    let opts: {
+    const opts: {
         limit?: number,
         nextDirection?: '$gte' | '$lte',
         nextField?: string,
         nextId?: string
+    } = {
+        limit: 100
     };
 
-    if (options) {
-        opts = new Buffer(options, 'base64').toString() as any;
-    } else {
-        opts = {
-            limit: 100
-        };
-    }
+    // if (options) {
+    //     opts = new Buffer(options, 'base64').toString() as any;
+    // } else {
+    //     opts = {
+    //         limit: 100
+    //     };
+    // }
 
     return db.marks.listFeed(handle, opts)
         .then(markItems => {
