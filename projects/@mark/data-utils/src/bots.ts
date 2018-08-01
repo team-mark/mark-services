@@ -32,9 +32,8 @@ export function captchaValidate(req: express.Request, res: express.Response, nex
     };
 
     request(options, (err: any, response: any) => {
-        debug(response.body);
-
-        if (response.body.success)
+        debug('response.body', response.body);
+                if (response.body.success)
             return next();
         return rest.Response.fromUnauthorized().send(res);
     });
