@@ -59,8 +59,8 @@ function likesOnPost(req: express.Request, res: express.Response, next: express.
 
 function likePost(req: express.Request, res: express.Response, next: express.NextFunction): Promise<rest.Response> {
     const { userRecord }: auth.BasicAuthFields = res.locals;
-    
-    if(!req.body.id)
+
+    if (!req.body.id)
         return Promise.resolve(rest.Response.fromUnknownError('No id in put body', 'no id in put body'));
 
     return db.likes.addLike(req.body.id, userRecord.handle)
