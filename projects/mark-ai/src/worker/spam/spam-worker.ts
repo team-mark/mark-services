@@ -34,12 +34,7 @@ export function init(): Promise<void> {
                 _pub = pub;
                 _sub = sub;
 
-                sub.on('subscribe', (channel: string, message: number) => {
-                    debugV('spam-worker ready');
-                    resolve();
-                });
-
-                sub.on('pmessage', (pattern: string, channel: string, message: string) => {
+                _sub.on('pmessage', (pattern: string, channel: string, message: string) => {
                     debugV('spam-worker ready');
                     const [_spam, _message, _announce, id] = channel.split('-');
 

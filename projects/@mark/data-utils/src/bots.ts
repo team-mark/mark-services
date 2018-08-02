@@ -12,7 +12,7 @@ const request = require('request');
 const TIME_TO_CHECK = 1;
 
 export interface BotMessageMetadata {
-    class: number;
+    class: 0 | 1;
     percentage0: number;
     percentage1: number;
 }
@@ -72,7 +72,6 @@ function getMarksForBotCheck(user: string): Promise<IMarkConsumer []> {
     const date = new Date();
 
     date.setHours(date.getHours() - TIME_TO_CHECK);
-
     const query = { createdAt: {$lt: date}, bot: 'UNKNOWN', owner: user};
 
     return marks.getMarks(1, 0, 50, query);
@@ -113,11 +112,9 @@ export function runBotCheck(user: string) {
 
             marks.forEach(element => {
                 classifyMark(element);
-            })
-        }).catch( err => {
-            debug(err);
+            });
         });
-    //classifyUser(user);
+    classifyUser(user);
 }
 
 // Sends Mark to ai service for classification
@@ -131,23 +128,19 @@ function submitMessage(message: string): Promise<BotMessageMetadata> {
         backbone.subscribe(responseChannel)
             .then(sub => {
                 debug(`Sending ${message} for classification!`);
-                debug(`Response channel: ${responseChannel}`);
                 sub.on('subscribe', (responseChannel: string, _message: string) => {
+                    debug(`Sub on: ${_message}`);
                     backbone.announce(channel, message);
                 });
 
                 sub.on('message', (responseChannel: string, message: string) => {
                     try {
                         const response: BotMessageMetadata = JSON.parse(message);
-                        debug('RESPONSE', response);
-                        debug('message', message);
-                        sub.unsubscribe(responseChannel);
                         resolve(response);
                     } catch (e) {
-                        sub.unsubscribe(responseChannel);
                         reject(e);
                     }
-                    
+                    sub.unsubscribe(channel);
                 });
             });
     });

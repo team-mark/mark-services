@@ -1,5 +1,6 @@
 import * as redisConnect from './redisConnect';
 import * as redis from 'redis';
+import { resolve } from 'url';
 
 export function announce(channel: string, message: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -18,41 +19,42 @@ export function announce(channel: string, message: string): Promise<void> {
 }
 
 export function subscribe(...channels: any[]): Promise<redis.RedisClient> {
-    // return new Promise((resolve, reject) => {
-    return redisConnect.subscriber()
-        .then(redisClient => {
+    return new Promise((resolve, reject) => {
+        redisConnect.subscriber()
+            .then(redisClient => {
 
-            // redisClient.on('subscribe', (channel: string, message: string) => {
-            //     resolve(redisClient);
-            // });
+                // redisClient.on('subscribe', (channel: string, message: string) => {
+                //     resolve(redisClient);
+                // });
 
-            // redisClient.on('subscribe', (channel: string, message: string) => {
-            //     resolve(redisClient);
-            // });
+                redisClient.on('subscribe', (channel: string, message: string) => {
+                    resolve(redisClient);
+                });
 
-            redisClient.subscribe(...channels);
-            return Promise.resolve(redisClient);
+                redisClient.subscribe(...channels);
+                return Promise.resolve(redisClient);
 
-        });
-    // });
+            });
+    });
 }
 
 export function psubscribe(...channels: any[]): Promise<redis.RedisClient> {
     // return new Promise((resolve, reject) => {
-    return redisConnect.subscriber()
-        .then(redisClient => {
+    return new Promise((resolve, reject) => {
 
-            // redisClient.on('subscribe', (channel: string, message: string) => {
-            //     resolve(redisClient);
-            // });
+        redisConnect.subscriber()
+            .then(redisClient => {
 
-            // redisClient.on('subscribe', (channel: string, message: string) => {
-            //     resolve(redisClient);
-            // });
+                // redisClient.on('subscribe', (channel: string, message: string) => {
+                //     resolve(redisClient);
+                // });
 
-            redisClient.psubscribe(...channels);
-            return Promise.resolve(redisClient);
+                redisClient.on('subscribe', (channel: string, message: string) => {
+                    resolve(redisClient);
+                });
 
-        });
-    // });
+                redisClient.psubscribe(...channels);
+                // return Promise.resolve(redisClient);
+            });
+    });
 }
