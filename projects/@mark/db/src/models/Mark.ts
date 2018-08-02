@@ -84,21 +84,22 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
 
     // Assembles IMarkConsumers given a list of MongoDb Mark documents
     private static assembleMarks(marks: IMarkDb[]): Promise<IMarkConsumer[]> {
-        const hashes: string[] = [];
-        const consumer: IMarkConsumer[] = [];
+        const hashes = marks.map(m => m.ipfs_id);
+        const consumableMarks = marks.map(Mark.map);
 
-        marks.forEach((mark, index) => {
-            hashes.push(mark.ethereum_id);
-            consumer.push(Mark.map(mark));
-        });
+        return ipfs.getManyIpfsPosts(hashes)
+            .then(ipfsPosts => {
 
-        return getManyIpfsPosts(hashes)
-            .then(ipfs_posts => {
-                for (let i = 0; i < ipfs_posts.length; i++) {
-                    consumer[i].body = ipfs_posts[i].content;
-                    consumer[i].owner = ipfs_posts[i].author;
-                }
-                return Promise.resolve(consumer);
+                debug('ipfsPosts');
+
+                // Update consumable marks content
+                ipfsPosts.forEach((post, index) => {
+                    consumableMarks[index].body = post.content;
+                });
+
+                return Promise.resolve(
+                   consumableMarks
+                );
             });
     }
 
@@ -148,9 +149,10 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         handle: string,
         opts?: {
             limit?: number,
-            nextField?: string
-            nextId?: string
-            nextDirection?: mongoDb.NextQueryDirection
+            nextField?: string,
+            nextId?: string,
+            nextDirection?: mongoDb.NextQueryDirection,
+            filterBots?: boolean
         }): Promise<{
             items: IMarkConsumer[],
             nextId: string,
@@ -159,7 +161,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         const DEFAULT_LIMIT = 100;
         const postOwners: string[] = [];
 
-        const filter = { $or: [{ owner: { $in: postOwners } }] };
+        let filter = {};
         const options = {};
         const sort = {};
         const { nextDirection, nextField, nextId } = opts;
@@ -168,7 +170,10 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
 
         let consumableMarks: IMarkConsumer[] = [];
 
-        // console.log('about to get following');
+        if (!opts.filterBots)
+            filter = { $or: [{ owner: { $in: postOwners }, $or: [{ bot: 'UNKNOWN' }, { bot: 'USER' }] }] };
+        else
+            filter = { $or: [{ owner: { $in: postOwners } }] };
 
         return this.users.getFollowing(handle)
             .then(following => {
@@ -237,7 +242,6 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
      */
     public create(content: string, user: IUserDb, passwordh: string): Promise<IMarkDb> {
         // 1. get Ethereum private key
-        // 1. get Ethereum private key
         // 2. post to IPFS
         // 3. post to Ethereum
         // 4. record entry in Mongo
@@ -256,11 +260,10 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
             owner: handle,
             // filled in below
             ethereum_id: undefined,
-            ipfs_id: undefined
+            ipfs_id: undefined,
+            bot: 'UNKNOWN'
         };
 
-        // bots.submitMessage(content)
-        //     .then(() => authentication.getLinkPK(userId, handle, passwordh))
         return authentication.getLinkPK(userId, handle, passwordh)
             .then(linkPK => {
 
@@ -268,7 +271,6 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                 const privateKey = authentication.getPrivateKey(linkPK, refPK);
                 debug('privateKey', privateKey);
 
-                // TODO: Add in bots.submitMessage
                 return addIpfsPost(post)
                     .then(ipfsHash => {
                         debug('ipfsHash', ipfsHash);

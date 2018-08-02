@@ -24,9 +24,11 @@ function listFeed(req: express.Request, res: express.Response, next: express.Nex
         limit?: number,
         nextDirection?: '$gte' | '$lte',
         nextField?: string,
-        nextId?: string
+        nextId?: string,
+        filterBots?: boolean
     } = {
-        limit: 100
+        limit: 100,
+        filterBots: false
     };
 
     // if (options) {
@@ -36,6 +38,13 @@ function listFeed(req: express.Request, res: express.Response, next: express.Nex
     //         limit: 100
     //     };
     // }
+
+    // not really sure how the options is supposed to look in the get request
+    // so i did this for now -Austin
+    if (req.query.bots)
+        opts.filterBots = req.query.filterBots;
+
+    debug('feed.ListFeed!');
 
     return db.marks.listFeed(handle, opts)
         .then(markItems => {
