@@ -73,8 +73,8 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
         const mapped: IMarkConsumer = {
             id: mark._id.toString(),
             ethereum_id: mark.ethereum_id,
-            body: null,
-            owner: null,
+            body: (mark as any).body,
+            owner: mark.owner,
             createdAt: mark.createdAt.toDateString(),
             bot: mark.bot
         };
@@ -98,7 +98,7 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                 });
 
                 return Promise.resolve(
-                   consumableMarks
+                    consumableMarks
                 );
             });
     }
@@ -224,6 +224,71 @@ export class Mark extends Model<IMarkDb, IMarkConsumer> {
                             items: consumableMarks,
                             nextId
                         });
+                    });
+            });
+        // .catch(error => debug(error));
+    }
+
+    public listMarks(
+        handle: string,
+        opts?: {
+            limit?: number,
+            nextField?: string,
+            nextId?: string,
+            nextDirection?: mongoDb.NextQueryDirection,
+            filterBots?: boolean
+        }): Promise<IMarkConsumer[]> {
+
+        // const DEFAULT_LIMIT = 100;
+        // const postOwners: string[] = [handle];
+
+        // let filter = {};
+        // const options = {};
+        // const sort = {};
+        // const { nextDirection, nextField, nextId } = opts;
+        // let { limit } = opts;
+        // limit = limit | DEFAULT_LIMIT;
+
+        let consumableMarks: IMarkConsumer[] = [];
+
+        // filter = { $or: [{ owner: { $in: postOwners } }] };
+
+        // return this.query<IMarkDb>(
+        //     filter,
+        //     options,
+        //     sort,
+        //     limit,
+        //     nextField,
+        //     nextId,
+        //     nextDirection
+        // )
+
+        return this.getByOwner(handle)
+            .then<any>(dbMarks => {
+
+                debug('markMeta');
+                consumableMarks = dbMarks as any;
+
+                if (consumableMarks.length === 0) {
+                    return Promise.resolve({
+                        items: [],
+                        nextId: undefined
+                    });
+                }
+
+                const hashes = dbMarks.map(m => m.ipfs_id);
+
+                return ipfs.getManyIpfsPosts(hashes)
+                    .then(ipfsPosts => {
+
+                        debug('ipfsPosts');
+
+                        // Update consumable marks content
+                        ipfsPosts.forEach((post, index) => {
+                            consumableMarks[index].body = post.content;
+                        });
+
+                        return Promise.resolve(consumableMarks);
                     });
             });
         // .catch(error => debug(error));

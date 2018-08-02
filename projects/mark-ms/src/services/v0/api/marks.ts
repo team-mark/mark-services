@@ -92,6 +92,9 @@ function listUserMarks(req: express.Request, res: express.Response & auth.BasicA
     const { handle } = req.params;
     const { userRecord }: auth.BasicAuthFields = res.locals;
 
-    return db.marks.getByOwner(handle)
-        .then(marks => Promise.resolve(rest.Response.fromSuccess({ items: marks.map(db.Mark.map) })));
+    return db.marks.listMarks(handle)
+        .then(marks => {
+            console.log('consumable marks', marks);
+            return Promise.resolve(rest.Response.fromSuccess({ items: marks }));
+        });
 }
