@@ -77,7 +77,7 @@ function postMark(req: express.Request, res: express.Response & auth.BasicAuthFi
     const { body, passwordh } = req.body;
     const { userRecord }: auth.BasicAuthFields = res.locals;
 
-    // bots.runBotCheck(userRecord.handle);
+    bots.runBotCheck(userRecord.handle);
 
     if (!body)
         return Promise.resolve(rest.Response.fromBadRequest('field_required', 'body required'));
