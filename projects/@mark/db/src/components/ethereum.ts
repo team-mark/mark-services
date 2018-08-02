@@ -9,6 +9,8 @@ const debug = require('debug')('mark:ethereum');
 import { EthereumPost } from '../models/EthereumPost';
 import { getInstance } from './web3';
 import { resolve } from 'url';
+import { getIpfsPost } from './ipfs';
+import { IpfsPost } from '../models/IpfsPost';
 
 const txValue = 1; // Value in 'Wei'. 1 Wei = 1x10^-18 Ether
 const txGasPrice = 1;
@@ -46,6 +48,31 @@ export function getEthereumPost(txHash: string): Promise<EthereumPost> {
             if (tx.input !== '0x') {
                 const post: EthereumPost = <EthereumPost>JSON.parse(getInstance().utils.toAscii(tx.input));
                 return Promise.resolve(post);
+            }
+        });
+    });
+}
+
+// Returns undefined if the transaction does not contain a valid EthereumPost.
+export function printPost(txHash: string): Promise<EthereumPost> {
+    return new Promise((resolve, reject) => {
+        getInstance().eth.getTransaction(txHash, (error, tx) => {
+            if (error) {
+                reject(error);
+            }
+
+            if (tx.input !== '0x') {
+                const post: EthereumPost = <EthereumPost>JSON.parse(getInstance().utils.toAscii(tx.input));
+                console.log('IPFS Hash: ' + post.hash);
+                // return Promise.resolve(post);
+
+                return getIpfsPost(post.hash)
+                    .then((post: IpfsPost) => {
+                        console.log('User Content: ' + post.content);
+                    })
+                    .catch((err: Error) => {
+                        console.log(err);
+                    }) 
             }
         });
     });

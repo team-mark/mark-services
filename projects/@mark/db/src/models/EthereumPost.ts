@@ -3,10 +3,10 @@
 export class EthereumPost {
 
     constructor(
-        private hash: string,
-        private parent?: string,
-        private sibling?: string,
-        private hashtag?: string[]) {
+        public hash: string,
+        public parent?: string,
+        public sibling?: string,
+        public hashtag?: string[]) {
     }
 
     toJSON(): object {
