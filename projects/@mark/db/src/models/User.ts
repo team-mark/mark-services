@@ -160,7 +160,7 @@ export class User extends Model<IUserDb, IUserConsumer> {
 
     public updateByHandle(handle: string, modifications: any) {
         const filter: mongoDb.IFilter<IUserDb> = { handle };
-        return this.users.updateOne(filter, modifications)
+        return this.users.updateOne(filter, { $set: modifications})
             .then(updateWriteOpResult => Promise.resolve());
 
     }
@@ -196,8 +196,8 @@ export class User extends Model<IUserDb, IUserConsumer> {
     }
 
     public updateProfilePicture(handle: string, url: string) {
-        const modifications: Partial<IUserDb> = { profilePicture: url };
-        return this.updateByHandle(handle, modifications);
+        const modifications: Partial<IUserDb> = {  profilePicture: url };
+        return this.updateByHandle(handle,  modifications);
     }
 
     public fundUserAccount(handle: string): Promise<void> {
